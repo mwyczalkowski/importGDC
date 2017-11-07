@@ -1,0 +1,8 @@
+FROM mwyczalkowski/mgi-basic
+
+RUN cd /usr/local \
+    && wget https://gdc.cancer.gov/system/files/authenticated%20user/0/gdc-client_v1.3.0_Ubuntu14.04_x64.zip \
+    && unzip gdc-client_v1.3.0_Ubuntu14.04_x64.zip \
+    && mv gdc-client /usr/local/bin
+
+ENTRYPOINT ["/usr/local/bin/gdc-client"]
