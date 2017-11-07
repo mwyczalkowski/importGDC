@@ -5,4 +5,4 @@ RUN cd /usr/local \
     && unzip gdc-client_v1.3.0_Ubuntu14.04_x64.zip \
     && mv gdc-client /usr/local/bin
 
-ENTRYPOINT ["/usr/local/bin/gdc-client"]
+CMD ["/bin/bash"]
