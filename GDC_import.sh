@@ -27,9 +27,9 @@ DF=$5
 IMAGE="mwyczalkowski/gdc-client"
 
 if [ -z $RUNBASH ]; then
-CMD="process_GDC_uuid.sh $UUID $TOKEN $FN $DF"
+    CMD="bash /usr/local/importGDC/image.init/process_GDC_uuid.sh $UUID $TOKEN $FN $DF"
 else
-CMD="/bin/bash"
+    CMD="/bin/bash"
 fi
 
 if [ -z $DRYRUN ]; then

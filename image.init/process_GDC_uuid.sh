@@ -40,6 +40,8 @@ then
     exit 1
 fi
 
+mkdir -p $OUTD
+
 UUID=$1
 TOKEN=$2
 FN=$3
@@ -51,9 +53,9 @@ DT=$4
 
 if [ $DT == "BAM" ]; then
 DAT=$OUTD/$UUID/$FN
->&2 Indexing $DAT
+>&2 echo Indexing $DAT
 
-/usr/local/bin/samtools index $DAT
+/usr/bin/samtools index $DAT
 
 fi
 

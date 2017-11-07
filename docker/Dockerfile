@@ -7,6 +7,7 @@ LABEL author="Matt Wyczalkowski" \
 RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
+    git \
     jq \
     libnss-sss \
     samtools \
@@ -14,3 +15,4 @@ RUN apt-get update && apt-get install -y \
     wget \
     zip \
     && apt-get clean
+
