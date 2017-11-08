@@ -46,25 +46,45 @@ fi
 
 # start docker in MGI environment
 function processUUID_MGI {
-ID=$1
+UUID=$1
+OUTD=$2
+TOKEN=$3
+FN=$4
+DF=$5
 
 # logs will be written to $SCRIPTD/bsub_run-step_$STEP.err, .out
-mkdir -p logs
-ERRLOG="logs/$ID.err"
-OUTLOG="logs/$ID.out"
+LOGD="bsub-logs"
+mkdir -p $LOGD
+ERRLOG="$LOGD/$UUID.err"
+OUTLOG="$LOGD/$UUID.out"
 LOGS="-e $ERRLOG -o $OUTLOG"
 rm -f $ERRLOG $OUTLOG
 echo Writing bsub logs to $OUTLOG and $ERRLOG
 
-# CMD is passed as argument to /usr/local/bin/gdc-client
-    # This is defined in /Users/mwyczalk/src/docker/mgi/Dockerfile.gdc-client with 
-    # ENTRYPOINT ["/usr/local/bin/gdc-client"]
-#CMD="download -t $TOKEN -d $OUTD $ID"
+BSUB="bsub"
+if [ ! -z $DRYRUN ]; then
+    BSUB="echo $BSUB"
+fi
 
-echo Not implemented
-exit
+# Where container's /data is mounted on host
+echo Mapping /data to $OUTD
+export LSF_DOCKER_VOLUMES="$OUTD:/data"
 
-bsub -q research-hpc $LOGS -a 'docker (mwyczalkowski/gdc-client)' "$CMD"
+# for testing, so that it goes faster, do this on blade18-2-11.gsc.wustl.edu
+#DOCKERHOST="-m blade18-2-11.gsc.wustl.edu"
+
+
+if [ -z $RUNBASH ]; then
+
+    PROCESS="/gscuser/mwyczalk/src/importGDC/image.init/process_GDC_uuid.sh"
+    #PROCESS="/usr/local/importGDC/image.init/process_GDC_uuid.sh"
+
+    CMD="/bin/bash $PROCESS $XARGS $UUID $TOKEN $FN $DF"
+    $BSUB -q research-hpc $DOCKERHOST $LOGS -a "docker(mwyczalkowski/gdc-client)" "$CMD"
+else
+    $BSUB -q research-hpc $DOCKERHOST -Is -a "docker(mwyczalkowski/gdc-client)" "/bin/bash"
+fi
+
 
 }
 
@@ -131,7 +151,7 @@ for UUID in "$@"
 do
 
 if [ $MGI ]; then
-processUUID_MGI $UUID
+processUUID_MGI $UUID $OUTD $TOKEN $FN $DF
 else
 processUUID $UUID $OUTD $TOKEN $FN $DF
 fi
