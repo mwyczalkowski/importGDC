@@ -2,12 +2,14 @@
 # Usage: GDC_import.sh [options] UUID [UUID2 ...]
 #
 # -M: run in MGI environment
-# -D: output directory on localhost.  Mandatory
+# -O: output directory on localhost.  Mandatory
 # -t: token file path in container.  Mandatory
 # -n: filename associated with UUID.  Mandatory
 # -p: dataformat (BAM or FASTQ).  Mandatory
 # -d: dry run - print out docker statement but do not execute (for debugging)
 # -B: run bash instead of process_GDC_uuid.sh
+# -D: Download only, do not index
+# -I: Index only, do not Download.  DT must be "BAM"
 
 # This is run from the host computer.  
 # Executes script image.init/process_GDC_uuid.sh from within docker container
@@ -26,8 +28,10 @@ DF=$5
 
 IMAGE="mwyczalkowski/gdc-client"
 
+# the XARGS things is ugly; used to pass -I and -O without redoing plumbing
+
 if [ -z $RUNBASH ]; then
-    CMD="bash /usr/local/importGDC/image.init/process_GDC_uuid.sh $UUID $TOKEN $FN $DF"
+    CMD="bash /usr/local/importGDC/image.init/process_GDC_uuid.sh $XARGS $UUID $TOKEN $FN $DF"
 else
     CMD="/bin/bash"
 fi
@@ -57,12 +61,16 @@ echo Writing bsub logs to $OUTLOG and $ERRLOG
     # ENTRYPOINT ["/usr/local/bin/gdc-client"]
 #CMD="download -t $TOKEN -d $OUTD $ID"
 
+echo Not implemented
+exit
+
 bsub -q research-hpc $LOGS -a 'docker (mwyczalkowski/gdc-client)' "$CMD"
 
 }
 
+XARGS=""
 # http://wiki.bash-hackers.org/howto/getopts_tutorial
-while getopts ":Mt:D:p:n:dB" opt; do
+while getopts ":Mt:O:p:n:dBID" opt; do
   case $opt in
     M)  # example of binary argument
       MGI=1
@@ -72,7 +80,7 @@ while getopts ":Mt:D:p:n:dB" opt; do
       TOKEN=$OPTARG
       >&2 echo Token file: $TOKEN
       ;;
-    D)
+    O)  # Note, this used to be O
       OUTD=$OPTARG
       >&2 echo Host data dir: $OUTD
       ;;
@@ -84,13 +92,19 @@ while getopts ":Mt:D:p:n:dB" opt; do
       FN=$OPTARG
       >&2 echo Filename: $FN
       ;;
-    d)  # example of binary argument
+    d) 
       DRYRUN=1
       >&2 echo Dry run
       ;;
     B)  
       RUNBASH=1
       >&2 echo Run bash
+      ;;
+    I)  
+      XARGS="$XARGS -I"
+      ;;
+    D)  
+      XARGS="$XARGS -D"
       ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
