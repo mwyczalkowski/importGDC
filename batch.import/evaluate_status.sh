@@ -16,7 +16,6 @@
 #       Default: ./data
 # -L LOG_DIR: path to LSF logs. Default: ./bsub-logs
 
-# these are locale-specific assumptions
 LOG_DIR="./bsub-logs"
 DATA_DIR="./data"
 
@@ -122,7 +121,7 @@ FN=$3
 TEST1=$(test_import_success $UUID $FN)  
 
 # for multi-step processing would report back a test for each step
-printf "$UUID\t$SN\t$FN\timport:$TEST1\n"
+printf "$UUID\t$SN\t$DATD/$FN\timport:$TEST1\n"
 }
 
 while read L; do

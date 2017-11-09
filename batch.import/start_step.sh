@@ -2,18 +2,29 @@
 
 # author: Matthew Wyczalkowski m.wyczalkowski@wustl.edu
 
-# Usage: start_step.sh [options] STEP UUID [UUID2 ...]
-# Start processing step STEP on host computer.  Currently, only acceptable value of STEP is 'import'
+# Usage: start_step.sh [options] UUID [UUID2 ...]
+# Start processing given step.  Run on host computer
 # options:
 # -d: dry run
 # -g LSF_GROUP: LSF group to use starting job
 # -S SR_FILE: path to SR data file.  Default: config/SR.dat
-# -O DATA_DIR: path to base of download directory (will write to $DATA_DIR/GDC_import (confirm this))
-#       Default: ./data
+# -O DATA_DIR: path to base of download directory (will write to $DATA_DIR/GDC_import). Default: ./data
+# -s STEP: Step to process.  Default (and only available value) is 'import'
+# -t TOKEN: token filename, path relative to container.  Default: /data/token/gdc-user-token.txt
 #
 # If UUID is - then read UUID from STDIN
+# 
+# Path to importGDC directory is defined by environment variable IMPORTGDC_HOME.  Default
+# is /usr/local/importGDC; can be changed with,
+#```
+#    export IMPORTGDC_HOME="/path/to/importGDC"
+#```
 
-SR="config/SR.dat"
+# If environment variable not defined, set it for the duration of this script to the path below
+if [ -z $IMPORTGDC_HOME ]; then
+    IMPORTGDC_HOME="/usr/local/importGDC"
+fi
+
 
 function launch_import {
 UUID=$1
@@ -32,13 +43,17 @@ else
     BASH="echo /bin/bash"
 fi
 
-$BASH $SRC/GDC_import.sh $XARGS -M -t $TOKEN_CONTAINER -O $DATA_DIR -p $DF -n $FN  $UUID
+$BASH $IMPORTGDC_HOME/GDC_import.sh $XARGS -M -t $TOKEN -O $DATA_DIR -p $DF -n $FN  $UUID
 
 }
 
+# Default values
+SR="config/SR.dat"
 DATA_DIR="./data"
+STEP="import"
+TOKEN="/data/token/gdc-user-token.txt"
 
-while getopts ":dg:S:O:" opt; do
+while getopts ":dg:S:O:s:t:" opt; do
   case $opt in
     d)  # example of binary argument
       echo "Dry run" >&2
@@ -47,7 +62,7 @@ while getopts ":dg:S:O:" opt; do
     g) # define LSF_GROUP
       XARGS="$XARGS -g $OPTARG"
       ;;
-    S) # example of value argument
+    S) 
       SR=$OPTARG
       if [ ! -e $SR ]; then
         >&2 echo "Error: $SR does not exist"
@@ -55,8 +70,16 @@ while getopts ":dg:S:O:" opt; do
       fi
       echo "SR File: $SR" >&2
       ;;
+    t) 
+      TOKEN=$OPTARG
+      echo "Token File: $TOKEN" >&2
+      ;;
     O) # set DATA_DIR
       DATA_DIR="$OPTARG"
+      echo "Data Dir: $DATA_DIR" >&2
+      ;;
+    s) 
+      STEP="$OPTARG"
       ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
@@ -75,16 +98,13 @@ if [ -z $SR ]; then
     exit
 fi
 
-if [ "$#" -lt 2 ]; then
+if [ "$#" -lt 1 ]; then
     >&2 echo Error: Wrong number of arguments
-    >&2 echo Usage: start_step.sh [options] step UUID [UUID2 ...]
+    >&2 echo Usage: start_step.sh [options] UUID [UUID2 ...]
     exit
 fi
 
-
-
-STEP=$1; shift
-echo Stage $STEP
+echo Step $STEP
 
 # this allows us to get UUIDs in one of two ways:
 # 1: start_step.sh ... UUID1 UUID2 UUID3
