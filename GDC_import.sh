@@ -10,6 +10,7 @@
 # -B: run bash instead of process_GDC_uuid.sh
 # -D: Download only, do not index
 # -I: Index only, do not Download.  DT must be "BAM"
+# -g LSF_GROUP: LSF group to start in.  MGI mode only
 
 # This is run from the host computer.  
 # Executes script image.init/process_GDC_uuid.sh from within docker container
@@ -80,17 +81,18 @@ if [ -z $RUNBASH ]; then
     #PROCESS="/usr/local/importGDC/image.init/process_GDC_uuid.sh"
 
     CMD="/bin/bash $PROCESS $XARGS $UUID $TOKEN $FN $DF"
-    $BSUB -q research-hpc $DOCKERHOST $LOGS -a "docker(mwyczalkowski/gdc-client)" "$CMD"
+    $BSUB -q research-hpc $DOCKERHOST $LSF_ARGS $LOGS -a "docker(mwyczalkowski/gdc-client)" "$CMD"
 else
-    $BSUB -q research-hpc $DOCKERHOST -Is -a "docker(mwyczalkowski/gdc-client)" "/bin/bash"
+    $BSUB -q research-hpc $DOCKERHOST $LSF_ARGS -Is -a "docker(mwyczalkowski/gdc-client)" "/bin/bash"
 fi
 
 
 }
 
 XARGS=""
+LSF_ARGS=""
 # http://wiki.bash-hackers.org/howto/getopts_tutorial
-while getopts ":Mt:O:p:n:dBID" opt; do
+while getopts ":Mt:O:p:n:dBIDg:" opt; do
   case $opt in
     M)  # example of binary argument
       MGI=1
@@ -125,6 +127,10 @@ while getopts ":Mt:O:p:n:dBID" opt; do
       ;;
     D)  
       XARGS="$XARGS -D"
+      ;;
+    g)  
+      LSF_ARGS="$LSF_ARGS -g $OPTARG"
+      >&2 echo LSF Group: $OPTARG
       ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
