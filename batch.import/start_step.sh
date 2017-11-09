@@ -1,28 +1,19 @@
+#!/bin/bash
 
-# Usage: start_step.sh [options] step UUID [UUID2 ...]
+# author: Matthew Wyczalkowski m.wyczalkowski@wustl.edu
+
+# Usage: start_step.sh [options] STEP UUID [UUID2 ...]
+# Start processing step STEP on host computer.  Currently, only acceptable value of STEP is 'import'
 # options:
 # -d: dry run
 # -g LSF_GROUP: LSF group to use starting job
-# -S SR_FILE: path to SR_merged.dat. Required
+# -S SR_FILE: path to SR data file.  Default: config/SR.dat
+# -O DATA_DIR: path to base of download directory (will write to $DATA_DIR/GDC_import (confirm this))
+#       Default: ./data
 #
 # If UUID is - then read UUID from STDIN
-#
-# Use `bgadd -L 5 /mwyczalk/gdc-download` to set job limit at 5
 
-
-# Data download location
-DATA_DIR="/gscmnt/gc2521/dinglab/mwyczalk/CPTAC3-download/"
-mkdir -p $DATA_DIR
-
-# root of github project https://github.com/ding-lab/importGDC
-SRC="/gscuser/mwyczalk/src/importGDC"
-
-# Copy token defined in host dir to container's /data directory
-TOKEN_HOST="token/gdc-user-token.2017-11-04T01-21-42.215Z.txt"
-TOKEN_CONTAINER="/data/$TOKEN_HOST"
-mkdir -p $DATA_DIR/token
-cp $TOKEN_HOST $DATA_DIR/token
-
+SR="config/SR.dat"
 
 function launch_import {
 UUID=$1
@@ -45,7 +36,9 @@ $BASH $SRC/GDC_import.sh $XARGS -M -t $TOKEN_CONTAINER -O $DATA_DIR -p $DF -n $F
 
 }
 
-while getopts ":dg:S:" opt; do
+DATA_DIR="./data"
+
+while getopts ":dg:S:O:" opt; do
   case $opt in
     d)  # example of binary argument
       echo "Dry run" >&2
@@ -61,6 +54,9 @@ while getopts ":dg:S:" opt; do
         exit
       fi
       echo "SR File: $SR" >&2
+      ;;
+    O) # set DATA_DIR
+      DATA_DIR="$OPTARG"
       ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2

@@ -1,3 +1,7 @@
+#!/bin/bash
+
+# author: Matthew Wyczalkowski m.wyczalkowski@wustl.edu
+
 # Read in an SR data file and write (to STDOUT) a batch file
 # Batch files define a collection of samples (submitted read entries) 
 # They have the UUID of the Submitted Read (BAM / FASTQ), as well as a unique name which is generated here

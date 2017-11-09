@@ -1,20 +1,27 @@
+#!/bin/bash
+
+# author: Matthew Wyczalkowski m.wyczalkowski@wustl.edu
+
 # Evaluate status of all samples in batch file 
-# This is specific to MGI
+# This is specific to MGI (dependent on LSF-specific output to evaluate status)
 # Usage: evaluate_status.sh [options] batch.dat
 #
 # Output written to STDOUT
 
 # options
 # -f status: output only lines matching status, e.g., -f import:completed
-# -u: output UUID only
-# -D: output data file path
+# -u: include only UUID in output
+# -D: include data file path in output
+# -O DATA_DIR: path to base of download directory (data in $DATA_DIR/GDC_import)
+#       Default: ./data
+# -L LOG_DIR: path to LSF logs. Default: ./bsub-logs
 
 # these are locale-specific assumptions
-LOGD="bsub-logs"
-DATD="/gscmnt/gc2521/dinglab/mwyczalk/CPTAC3-download/GDC_import"
+LOG_DIR="./bsub-logs"
+DATA_DIR="./data"
 
 # http://wiki.bash-hackers.org/howto/getopts_tutorial
-while getopts ":uf:D" opt; do
+while getopts ":uf:DO:L:" opt; do
   case $opt in
     u)  
       UUID_ONLY=1
@@ -22,8 +29,14 @@ while getopts ":uf:D" opt; do
     D)  
       DATA_PATH=1
       ;;
-    f) # example of value argument
+    f) 
       FILTER=$OPTARG
+      ;;
+    O) # set DATA_DIR
+      DATA_DIR="$OPTARG"
+      ;;
+    L) 
+      LOG_DIR="$OPTARG"
       ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
@@ -45,7 +58,7 @@ fi
 
 BATCH=$1
 
-
+DATD="$DATA_DIR/GDC_import"
 if [ ! -e $DATD ]; then
     >&2 echo "Error: Data directory does not exist: $DATD"
     exit
@@ -60,8 +73,8 @@ function test_import_success {
 UUID=$1
 FN=$2
 
-LOGERR="$LOGD/$UUID.err"  # this is generally not used
-LOGOUT="$LOGD/$UUID.out"
+LOGERR="$LOG_DIR/$UUID.err"  # this is generally not used
+LOGOUT="$LOG_DIR/$UUID.out"
 DAT="$DATD/$FN"
 DATP="$DATD/$FN.partial"
 
