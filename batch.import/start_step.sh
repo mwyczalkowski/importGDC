@@ -64,10 +64,6 @@ while getopts ":dg:S:O:s:t:" opt; do
       ;;
     S) 
       SR=$OPTARG
-      if [ ! -e $SR ]; then
-        >&2 echo "Error: $SR does not exist"
-        exit
-      fi
       echo "SR File: $SR" >&2
       ;;
     t) 
@@ -95,6 +91,10 @@ shift $((OPTIND-1))
 
 if [ -z $SR ]; then
     >&2 echo Error: SR file not defined \(-S\)
+    exit
+fi
+if [ ! -e $SR ]; then
+    >&2 echo "Error: $SR does not exist"
     exit
 fi
 
