@@ -1,3 +1,6 @@
+#!/bin/bash
+
+# author: Matthew Wyczalkowski m.wyczalkowski@wustl.edu
 
 # Usage: process_GDC_uuid.sh [options] UUID TOKEN FN DT
 # Download and index (if BAM) data from GDC
@@ -11,6 +14,7 @@
 #   -D: Download only, do not index
 #   -I: Index only, do not Download.  DT must be "BAM"
 #   -d: dry run, simply print commands which would be executed for principal steps
+#   -f: force overwrite of existing data files
 
 OUTD="/data/GDC_import"
 
@@ -25,6 +29,10 @@ while getopts ":O:DId" opt; do
     I)  # Index only
       IXO=1
       >&2 echo Output dir: $OUTD
+      ;;
+    f)  # dry run
+      FORCE_OVERWRITE=1
+      >&2 echo Force overwrite of existing files
       ;;
     d)  # dry run
       DRYRUN=1
@@ -65,8 +73,13 @@ if [ ! -z $DRYRUN ]; then
 RUN="echo"
 fi
 
-# Download if not "index only"
+# If output file exists and FORCE_OVERWRITE not set, and not in Index Only mode, exit
+if [ -f $DAT ] && [ -z $FORCE_OVERWRITE ] && [ -z $IXO ]; then
+>&2 echo Output file $DAT exists.  Stopping.  Use -f to force overwrite.
+exit
+fi
 
+# Download if not "index only"
 if [ -z $IXO ]; then
 >&2 echo Writing to $DAT
 
