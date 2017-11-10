@@ -12,6 +12,7 @@
 # -S SR_FILE: path to SR data file.  Default: config/SR.dat
 # -O DATA_DIR: path to base of download directory (will write to $DATA_DIR/GDC_import). Default: ./data
 # -r REF: reference name - assume same for all SR.  Default: hg19
+# -H: Print header
 
 # Script to create sample name from case, experimental_strategy, and sample_type abbreviation
 source "$IMPORTGDC_HOME/batch.import/get_SN.sh"
@@ -28,6 +29,11 @@ function summarize_import {
     REF=$2
 
     SR=$(grep $UUID $SR_FILE)  # assuming only one value returned
+    if [ -z "$SR" ]; then
+        >&2 echo UUID $UUID not found in $SR_FILE
+        >&2 echo Quitting.
+        exit
+    fi
     
     CASE=$(echo "$SR" | cut -f 1)
     DIS=$(echo "$SR" | cut -f 2)
@@ -47,7 +53,7 @@ function summarize_import {
     fi
 
     # Test existence of output file and index file
-    FNF="$DATD/$UUID/$FN"  # append full path to data file
+    FNF=$(echo "$DATD/$UUID/$FN" | tr -s '/')  # append full path to data file, normalize path separators
     if [ ! -e $FNF ]; then
         >&2 echo WARNING: Data file does not exist: $FNF
     fi
@@ -71,7 +77,7 @@ DATA_DIR="./data"
 REF="hg19"
 
 # http://wiki.bash-hackers.org/howto/getopts_tutorial
-while getopts ":S:O:r:" opt; do
+while getopts ":S:O:r:H" opt; do
   case $opt in
     S) 
       SR_FILE=$OPTARG
@@ -79,8 +85,11 @@ while getopts ":S:O:r:" opt; do
     O) # set DATA_DIR
       DATA_DIR="$OPTARG"
       ;;
-    r) # set DATA_DIR
+    r) 
       REF="$OPTARG"
+      ;;
+    H) 
+      HEADER=1
       ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
@@ -115,6 +124,9 @@ if [ ! -e $DATD ]; then
     exit
 fi
 
+if [ $HEADER ]; then
+    printf "# SampleName\tCase\tDisease\tExpStrategy\tSampType\tDataPath\tDataFormat\tReference\tUUID\n"
+fi
 
 # this allows us to get UUIDs in one of two ways:
 # 1: start_step.sh ... UUID1 UUID2 UUID3

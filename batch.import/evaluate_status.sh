@@ -109,13 +109,27 @@ else
     fi
 fi
 
-# Now test if .bai file exists.  If it does, we are completed.  Otherwise, incomplete
-BAI="$DAT.bai"
-if [ -e $BAI ]; then
-    echo completed
+# In case of BAM file, test if .bai file exists.  If it does, we are completed.  Otherwise, incomplete
+# We are testing for filename extension since we don't have data format information
+FNB=$(basename "$FN")
+EXT="${FNB##*.}"
+
+if [ $EXT == 'BAM' ]; then
+    BAI="$DAT.bai"
+    if [ -e $BAI ]; then
+        echo completed
+    else
+        echo incomplete
+    fi
 else
-    echo incomplete
+# If not BAM file, just test if result file exists
+    if [ -e $DAT ]; then
+        echo completed
+    else
+        echo incomplete
+    fi
 fi
+
 
 
 }
