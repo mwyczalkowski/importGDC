@@ -39,7 +39,7 @@ else
 fi
 
 if [ -z $DRYRUN ]; then
-    docker run -v $OUTD:/data -it $IMAGE $CMD
+    docker run -v $OUTD:/data -it $DOCKER_IMAGE $CMD
 else
     >&2 echo docker run -v $OUTD:/data -it $DOCKER_IMAGE $CMD
 fi

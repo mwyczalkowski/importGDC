@@ -1,1 +1,1 @@
-docker build -t mwyczalkowski/gdc-client . 
+docker build -t mwyczalkowski/importgdc . 
