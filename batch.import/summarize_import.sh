@@ -27,7 +27,7 @@ function summarize_import {
     UUID=$1
     REF=$2
 
-    SR=$(grep $UUID $SR)  # assuming only one value returned
+    SR=$(grep $UUID $SR_FILE)  # assuming only one value returned
     
     CASE=$(echo "$SR" | cut -f 1)
     DIS=$(echo "$SR" | cut -f 2)
@@ -66,7 +66,7 @@ function summarize_import {
 }
 
 # Default values
-SR="config/SR.dat"
+SR_FILE="config/SR.dat"
 DATA_DIR="./data"
 REF="hg19"
 
@@ -74,12 +74,10 @@ REF="hg19"
 while getopts ":S:O:r:" opt; do
   case $opt in
     S) 
-      SR=$OPTARG
-      echo "SR File: $SR" >&2
+      SR_FILE=$OPTARG
       ;;
     O) # set DATA_DIR
       DATA_DIR="$OPTARG"
-      echo "Data Dir: $DATA_DIR" >&2
       ;;
     r) # set DATA_DIR
       REF="$OPTARG"
@@ -96,12 +94,12 @@ while getopts ":S:O:r:" opt; do
 done
 shift $((OPTIND-1))
 
-if [ -z $SR ]; then
+if [ -z $SR_FILE ]; then
     >&2 echo Error: SR file not defined \(-S\)
     exit
 fi
-if [ ! -e $SR ]; then
-    >&2 echo "Error: $SR does not exist"
+if [ ! -e $SR_FILE ]; then
+    >&2 echo "Error: $SR_FILE does not exist"
     exit
 fi
 

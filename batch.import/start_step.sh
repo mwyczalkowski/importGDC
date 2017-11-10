@@ -11,6 +11,8 @@
 # -O DATA_DIR: path to base of download directory (will write to $DATA_DIR/GDC_import). Default: ./data
 # -s STEP: Step to process.  Default (and only available value) is 'import'
 # -t TOKEN: token filename, path relative to container.  Default: /data/token/gdc-user-token.txt
+# -D: Download only, do not index
+# -I: Index only, do not Download.  DT must be "BAM"
 #
 # If UUID is - then read UUID from STDIN
 # 
@@ -53,7 +55,7 @@ DATA_DIR="./data"
 STEP="import"
 TOKEN="/data/token/gdc-user-token.txt"
 
-while getopts ":dg:S:O:s:t:" opt; do
+while getopts ":dg:S:O:s:t:ID" opt; do
   case $opt in
     d)  # example of binary argument
       echo "Dry run" >&2
@@ -76,6 +78,12 @@ while getopts ":dg:S:O:s:t:" opt; do
       ;;
     s) 
       STEP="$OPTARG"
+      ;;
+    I)  
+      XARGS="$XARGS -I"
+      ;;
+    D)  
+      XARGS="$XARGS -D"
       ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2

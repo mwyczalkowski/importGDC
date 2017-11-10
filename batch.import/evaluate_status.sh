@@ -65,7 +65,7 @@ fi
 
 
 # Evaluate download status of gdc-client by examining LSF logs (MGI-specific) and existence of output file
-# Returns one of "ready", "running", "completed", "error"
+# Returns one of "ready", "running", "completed", "incomplete", "error"
 # Usage: test_import_success UUID FN
 # where FN is the filename (relative to data directory) as written by gdc-client
 function test_import_success {
@@ -91,18 +91,32 @@ if [ ! -e $DAT ] && [ ! -e $DATP ] ; then
     return
 fi
 
-ERROR="Exited with exit code"
-if fgrep -Fq "$ERROR" $LOGOUT; then
-    echo error
-    return
+# Handle the case where LOGOUT does not exist - this might happen during some error conditions.
+# We won't know if running or error, but might establish complete or incomplete
+if [ ! -e $LOGOUT ]; then
+    >&2 echo WARNING: Log file $LOGOUT does not exist.  Continuing.
+else
+    ERROR="Exited with exit code"
+    if fgrep -Fq "$ERROR" $LOGOUT; then
+        echo error
+        return
+    fi
+
+    SUCCESS="Successfully completed."
+    if ! fgrep -Fxq "$SUCCESS" $LOGOUT; then
+        echo running
+        return
+    fi
 fi
 
-SUCCESS="Successfully completed."
-if fgrep -Fxq "$SUCCESS" $LOGOUT; then
+# Now test if .bai file exists.  If it does, we are completed.  Otherwise, incomplete
+BAI="$DAT.bai"
+if [ -e $BAI ]; then
     echo completed
 else
-    echo running
+    echo incomplete
 fi
+
 
 }
 

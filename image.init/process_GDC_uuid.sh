@@ -1,3 +1,6 @@
+#!/bin/bash
+
+# author: Matthew Wyczalkowski m.wyczalkowski@wustl.edu
 
 # Usage: process_GDC_uuid.sh [options] UUID TOKEN FN DT
 # Download and index (if BAM) data from GDC
@@ -70,8 +73,8 @@ if [ ! -z $DRYRUN ]; then
 RUN="echo"
 fi
 
-# If output file exists and FORCE_OVERWRITE not set, exit
-if [ -f $DAT ] && [ -z $FORCE_OVERWRITE ]; then
+# If output file exists and FORCE_OVERWRITE not set, and not in Index Only mode, exit
+if [ -f $DAT ] && [ -z $FORCE_OVERWRITE ] && [ -z $IXO ]; then
 >&2 echo Output file $DAT exists.  Stopping.  Use -f to force overwrite.
 exit
 fi
