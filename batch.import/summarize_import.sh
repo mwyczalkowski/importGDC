@@ -125,6 +125,8 @@ if [ ! -e $DATD ]; then
 fi
 
 if [ $HEADER ]; then
+    dt=$(date '+%d/%m/%Y %H:%M:%S');
+    echo "# Summary Date $dt" 
     printf "# SampleName\tCase\tDisease\tExpStrategy\tSampType\tDataPath\tDataFormat\tReference\tUUID\n"
 fi
 
