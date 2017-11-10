@@ -3,8 +3,9 @@
 # essentially equivalent to GDC_import.sh -B
 
 
-DATA_DIR="/diskmnt/Projects/cptac"
+#DATA_DIR="/diskmnt/Projects/cptac"  # DC2 
+DATA_DIR="$HOME/src/SomaticWrapper/data" # epazote
 DOCKER_IMAGE="mwyczalkowski/importgdc"
 CMD="/bin/bash"
 
-docker run -v $OUTD:/data -it $DOCKER_IMAGE $CMD
+docker run -v $DATA_DIR:/data -it $DOCKER_IMAGE $CMD
