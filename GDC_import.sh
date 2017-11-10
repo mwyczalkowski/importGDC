@@ -28,11 +28,10 @@ DF=$5
 # Host: $OUTD
 
 IMAGE="mwyczalkowski/gdc-client"
-
-# the XARGS things is ugly; used to pass -I and -O without redoing plumbing
+PROCESS="/usr/local/importGDC/image.init/process_GDC_uuid.sh"
 
 if [ -z $RUNBASH ]; then
-    CMD="bash /usr/local/importGDC/image.init/process_GDC_uuid.sh $XARGS $UUID $TOKEN $FN $DF"
+    CMD="bash $PROCESS $XARGS $UUID $TOKEN $FN $DF"
 else
     CMD="/bin/bash"
 fi
@@ -74,19 +73,15 @@ export LSF_DOCKER_VOLUMES="$OUTD:/data"
 # for testing, so that it goes faster, do this on blade18-2-11.gsc.wustl.edu
 #DOCKERHOST="-m blade18-2-11.gsc.wustl.edu"
 
-
 if [ -z $RUNBASH ]; then
 
-    PROCESS="/gscuser/mwyczalk/src/importGDC/image.init/process_GDC_uuid.sh"
-    #PROCESS="/usr/local/importGDC/image.init/process_GDC_uuid.sh"
+    PROCESS="$IMPORTGDC_HOME/image.init/process_GDC_uuid.sh"
 
     CMD="/bin/bash $PROCESS $XARGS $UUID $TOKEN $FN $DF"
     $BSUB -q research-hpc $DOCKERHOST $LSF_ARGS $LOGS -a "docker(mwyczalkowski/gdc-client)" "$CMD"
 else
     $BSUB -q research-hpc $DOCKERHOST $LSF_ARGS -Is -a "docker(mwyczalkowski/gdc-client)" "/bin/bash"
 fi
-
-
 }
 
 XARGS=""

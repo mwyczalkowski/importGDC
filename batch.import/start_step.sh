@@ -13,6 +13,7 @@
 # -t TOKEN: token filename, path relative to container.  Default: /data/token/gdc-user-token.txt
 # -D: Download only, do not index
 # -I: Index only, do not Download.  DT must be "BAM"
+# -M: MGI environment
 #
 # If UUID is - then read UUID from STDIN
 # 
@@ -45,7 +46,7 @@ else
     BASH="echo /bin/bash"
 fi
 
-$BASH $IMPORTGDC_HOME/GDC_import.sh $XARGS -M -t $TOKEN -O $DATA_DIR -p $DF -n $FN  $UUID
+$BASH $IMPORTGDC_HOME/GDC_import.sh $XARGS -t $TOKEN -O $DATA_DIR -p $DF -n $FN  $UUID
 
 }
 
@@ -55,7 +56,7 @@ DATA_DIR="./data"
 STEP="import"
 TOKEN="/data/token/gdc-user-token.txt"
 
-while getopts ":dg:S:O:s:t:ID" opt; do
+while getopts ":dg:S:O:s:t:IDM" opt; do
   case $opt in
     d)  # example of binary argument
       echo "Dry run" >&2
@@ -84,6 +85,9 @@ while getopts ":dg:S:O:s:t:ID" opt; do
       ;;
     D)  
       XARGS="$XARGS -D"
+      ;;
+    M)  
+      XARGS="$XARGS -M"
       ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
