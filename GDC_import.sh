@@ -15,6 +15,8 @@
 # This is run from the host computer.  
 # Executes script image.init/process_GDC_uuid.sh from within docker container
 
+DOCKER_IMAGE="mwyczalkowski/importgdc"
+
 # start process_GDC_uuid.sh in vanilla docker environment
 function processUUID {
 UUID=$1
@@ -23,11 +25,10 @@ TOKEN=$3
 FN=$4
 DF=$5
 
-# This starts mwyczalkowski/gdc-client and maps directories:
+# This starts mwyczalkowski/importgdc and maps directories:
 # Container: /data
 # Host: $OUTD
 
-IMAGE="mwyczalkowski/gdc-client"
 PROCESS="/usr/local/importGDC/image.init/process_GDC_uuid.sh"
 
 if [ -z $RUNBASH ]; then
@@ -37,9 +38,9 @@ else
 fi
 
 if [ -z $DRYRUN ]; then
-    docker run -v $OUTD:/data -it $IMAGE $CMD
+    docker run -v $OUTD:/data -it $DOCKER_IMAGE $CMD
 else
-    >&2 echo docker run -v $OUTD:/data -it $IMAGE $CMD
+    >&2 echo docker run -v $OUTD:/data -it $DOCKER_IMAGE $CMD
 fi
 
 }
@@ -78,9 +79,9 @@ if [ -z $RUNBASH ]; then
     PROCESS="$IMPORTGDC_HOME/image.init/process_GDC_uuid.sh"
 
     CMD="/bin/bash $PROCESS $XARGS $UUID $TOKEN $FN $DF"
-    $BSUB -q research-hpc $DOCKERHOST $LSF_ARGS $LOGS -a "docker(mwyczalkowski/gdc-client)" "$CMD"
+    $BSUB -q research-hpc $DOCKERHOST $LSF_ARGS $LOGS -a "docker($DOCKER_IMAGE)" "$CMD"
 else
-    $BSUB -q research-hpc $DOCKERHOST $LSF_ARGS -Is -a "docker(mwyczalkowski/gdc-client)" "/bin/bash"
+    $BSUB -q research-hpc $DOCKERHOST $LSF_ARGS -Is -a "docker($DOCKER_IMAGE)" "/bin/bash"
 fi
 }
 
