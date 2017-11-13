@@ -15,13 +15,22 @@
 #   -I: Index only, do not Download.  DT must be "BAM"
 #   -d: dry run, simply print commands which would be executed for principal steps
 #   -f: force overwrite of existing data files
+#   -P GDCBIN: Path to gdc-client.  Default: /usr/local/bin
 
 OUTD="/data/GDC_import"
+GDCBIN="/usr/local/bin"
 
 # http://wiki.bash-hackers.org/howto/getopts_tutorial
-while getopts ":O:DId" opt; do
+while getopts ":O:DIdP:" opt; do
   case $opt in
-# TODO: implement O:
+    O)
+      OUTD="$OPTARG"
+      >&2 echo Output directory: $OUTD
+      ;;
+    P)
+      GDCBIN="$OPTARG"
+      >&2 echo GDC Path: $GDCBIN
+      ;;
     D)  # Download only
       DLO=1
       >&2 echo MGI Mode
@@ -91,7 +100,7 @@ fi
 
 # Documentation of gdc-client: https://docs.gdc.cancer.gov/Data_Transfer_Tool/Users_Guide/Accessing_Built-in_Help/
 # GDC Client saves data to file $OUTD/$UUID/$FN.  We take advantage of this information to index BAM file after download
-$RUN /usr/local/bin/gdc-client download -t $TOKEN -d $OUTD $UUID
+$RUN $GDCBIN/gdc-client download -t $TOKEN -d $OUTD $UUID
 fi
 
 
