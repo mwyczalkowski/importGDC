@@ -14,6 +14,7 @@
 # -D: Download only, do not index
 # -I: Index only, do not Download.  DT must be "BAM"
 # -M: MGI environment
+# -B: Run BASH in docker instead of gdc-client
 #
 # If UUID is - then read UUID from STDIN
 # 
@@ -46,7 +47,7 @@ else
     BASH="echo /bin/bash"
 fi
 
-$BASH $IMPORTGDC_HOME/GDC_import.sh $XARGS -t $TOKEN -O $DATA_DIR -p $DF -n $FN  $UUID
+$BASH $IMPORTGDC_HOME/GDC_import.sh -d $XARGS -t $TOKEN -O $DATA_DIR -p $DF -n $FN  $UUID
 
 }
 
@@ -56,11 +57,14 @@ DATA_DIR="./data"
 STEP="import"
 TOKEN="/data/token/gdc-user-token.txt"
 
-while getopts ":dg:S:O:s:t:IDM" opt; do
+while getopts ":dg:S:O:s:t:IDMB" opt; do
   case $opt in
     d)  # example of binary argument
       echo "Dry run" >&2
       DRYRUN=1
+      ;;
+    B) # define LSF_GROUP
+      XARGS="$XARGS -B"
       ;;
     g) # define LSF_GROUP
       XARGS="$XARGS -g $OPTARG"
