@@ -7,6 +7,8 @@
 # -n: filename associated with UUID.  Mandatory
 # -p: dataformat (BAM or FASTQ).  Mandatory
 # -d: dry run - print out docker statement but do not execute (for debugging)
+#     This may be repeated (e.g., -dd or -d -d) to pass the -d argument to called functions instead, 
+#     with each called function called in dry run mode if it gets one -d, and popping off one and passing rest otherwise
 # -B: run bash instead of process_GDC_uuid.sh
 # -D: Download only, do not index
 # -I: Index only, do not Download.  DT must be "BAM"
@@ -16,6 +18,7 @@
 # Executes script image.init/process_GDC_uuid.sh from within docker container
 
 DOCKER_IMAGE="mwyczalkowski/importgdc"
+PROCESS="/usr/local/importGDC/image.init/process_GDC_uuid.sh"
 
 # start process_GDC_uuid.sh in vanilla docker environment
 function processUUID {
@@ -29,19 +32,23 @@ DF=$5
 # Container: /data
 # Host: $OUTD
 
-PROCESS="/usr/local/importGDC/image.init/process_GDC_uuid.sh"
 
-if [ -z $RUNBASH ]; then
-    CMD="bash $PROCESS $XARGS $UUID $TOKEN $FN $DF"
-else
-    CMD="/bin/bash"
+# If DRYRUN is 'd' then we're in dry run mode (only print the called function),
+# otherwise call the function as normal with one less -d argument than we got
+if [ -z $DRYRUN ]; then   # DRYRUN not set
+    DOCKER="docker"
+elif [ $DRYRUN == "d" ]; then  # DRYRUN is -d: echo the command rather than executing it
+    DOCKER="echo docker"
+else    # DRYRUN has multiple d's: strip one d off the argument and pass it to function
+    DOCKER="docker"
+    DRYRUN=${DRYRUN%?}
+    XARGS="$XARGS -$DRYRUN"
 fi
 
-if [ -z $DRYRUN ]; then
-    docker run -v $OUTD:/data -it $DOCKER_IMAGE $CMD
-else
-    >&2 echo docker run -v $OUTD:/data -it $DOCKER_IMAGE $CMD
-fi
+# This is the command that will execute on docker
+CMD="/bin/bash $PROCESS $XARGS $UUID $TOKEN $FN $DF"
+
+$DOCKER run -v $OUTD:/data -it $DOCKER_IMAGE $CMD >&2
 
 }
 
@@ -111,7 +118,7 @@ while getopts ":Mt:O:p:n:dBIDg:" opt; do
       >&2 echo Filename: $FN
       ;;
     d) 
-      DRYRUN=1
+      DRYRUN="d$DRYRUN"
       >&2 echo Dry run
       ;;
     B)  

@@ -5,7 +5,8 @@
 # Usage: start_step.sh [options] UUID [UUID2 ...]
 # Start processing given step.  Run on host computer
 # options:
-# -d: dry run
+# -d: dry run.  This may be repeated (e.g., -dd or -d -d) to pass the -d argument to called functions instead, 
+#     with each called function called in dry run mode if it gets one -d, and popping off one and passing rest otherwise
 # -g LSF_GROUP: LSF group to use starting job
 # -S SR_FILE: path to SR data file.  Default: config/SR.dat
 # -O DATA_DIR: path to base of download directory (will write to $DATA_DIR/GDC_import). Default: ./data
@@ -33,21 +34,34 @@ fi
 function launch_import {
 UUID=$1
 
+NMATCH=$(grep $UUID $SR | wc -l)
+if [ $NMATCH -ne "1" ]; then
+    >&2 echo ERROR: UUID $UUID  matches $NMATCH lines in $SR \(expecting unique match\)
+    exit 1;
+fi
+
 FN=$(grep $UUID $SR | cut -f 6)
 DF=$(grep $UUID $SR | cut -f 8)
 
-if [ -z $FN ]; then
+
+if [ -z "$FN" ]; then
     >&2 echo Error: UUID $UUID not found in $SR
-    exit
+    exit 1
 fi
 
-if [ -z $DRYRUN ]; then
+# If DRYRUN is 'd' then we're in dry run mode (only print the called function),
+# otherwise call the function as normal with one less -d argument than we got
+if [ -z $DRYRUN ]; then   # DRYRUN not set
     BASH="/bin/bash"
-else
+elif [ $DRYRUN == "d" ]; then  # DRYRUN is -d: echo the command rather than executing it
     BASH="echo /bin/bash"
+else    # DRYRUN has multiple d's: strip one d off the argument and pass it to function
+    BASH="/bin/bash"
+    DRYRUN=${DRYRUN%?}
+    XARGS="$XARGS -$DRYRUN"
 fi
 
-$BASH $IMPORTGDC_HOME/GDC_import.sh -d $XARGS -t $TOKEN -O $DATA_DIR -p $DF -n $FN  $UUID
+$BASH $IMPORTGDC_HOME/GDC_import.sh $XARGS -t $TOKEN -O $DATA_DIR -p $DF -n $FN  $UUID
 
 }
 
@@ -61,7 +75,7 @@ while getopts ":dg:S:O:s:t:IDMB" opt; do
   case $opt in
     d)  # example of binary argument
       echo "Dry run" >&2
-      DRYRUN=1
+      DRYRUN="d$DRYRUN"
       ;;
     B) # define LSF_GROUP
       XARGS="$XARGS -B"
@@ -107,20 +121,18 @@ shift $((OPTIND-1))
 
 if [ -z $SR ]; then
     >&2 echo Error: SR file not defined \(-S\)
-    exit
+    exit 1
 fi
 if [ ! -e $SR ]; then
     >&2 echo "Error: $SR does not exist"
-    exit
+    exit 1
 fi
 
 if [ "$#" -lt 1 ]; then
     >&2 echo Error: Wrong number of arguments
     >&2 echo Usage: start_step.sh [options] UUID [UUID2 ...]
-    exit
+    exit 1
 fi
-
-echo Step $STEP
 
 # this allows us to get UUIDs in one of two ways:
 # 1: start_step.sh ... UUID1 UUID2 UUID3
