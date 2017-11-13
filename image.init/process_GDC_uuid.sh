@@ -3,7 +3,7 @@
 # author: Matthew Wyczalkowski m.wyczalkowski@wustl.edu
 
 # Usage: process_GDC_uuid.sh [options] UUID TOKEN FN DT
-# Download and index (if BAM) data from GDC
+# Download and index (if BAM) data from GDC.  This script runs within docker container
 # Arguments:
 #   UUID - UUID of object to download.  Mandatory
 #   TOKEN - token filename visible from container.  Mandatory
@@ -76,12 +76,18 @@ fi
 # If output file exists and FORCE_OVERWRITE not set, and not in Index Only mode, exit
 if [ -f $DAT ] && [ -z $FORCE_OVERWRITE ] && [ -z $IXO ]; then
 >&2 echo Output file $DAT exists.  Stopping.  Use -f to force overwrite.
-exit
+exit 1
 fi
 
 # Download if not "index only"
 if [ -z $IXO ]; then
 >&2 echo Writing to $DAT
+
+# Confirm token file exists
+if [ ! -e $TOKEN ]; then
+    >&2 echo ERROR: Token file does not exist: $TOKEN
+    exit 1
+fi
 
 # Documentation of gdc-client: https://docs.gdc.cancer.gov/Data_Transfer_Tool/Users_Guide/Accessing_Built-in_Help/
 # GDC Client saves data to file $OUTD/$UUID/$FN.  We take advantage of this information to index BAM file after download
@@ -96,7 +102,7 @@ if [ $DT == "BAM" ] && [ -z $DLO ] ; then
 # Confirm $DAT exists
 if [ ! -f $DAT ]; then
 >&2 echo BAM file $DAT does not exist.  Not indexing.
-exit
+exit 1
 fi
 
 $RUN /usr/bin/samtools index $DAT
