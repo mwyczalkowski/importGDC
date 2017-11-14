@@ -55,6 +55,7 @@ if [ -z $DRYRUN ]; then   # DRYRUN not set
     BASH="/bin/bash"
 elif [ $DRYRUN == "d" ]; then  # DRYRUN is -d: echo the command rather than executing it
     BASH="echo /bin/bash"
+    echo "Dry run in $0" >&2
 else    # DRYRUN has multiple d's: strip one d off the argument and pass it to function
     BASH="/bin/bash"
     DRYRUN=${DRYRUN%?}
@@ -73,8 +74,7 @@ TOKEN="/data/token/gdc-user-token.txt"
 
 while getopts ":dg:S:O:s:t:IDMB" opt; do
   case $opt in
-    d)  # example of binary argument
-      echo "Dry run" >&2
+    d)  # -d is a stack of parameters, each script popping one off until get to -d
       DRYRUN="d$DRYRUN"
       ;;
     B) # define LSF_GROUP

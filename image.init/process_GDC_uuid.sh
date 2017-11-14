@@ -45,7 +45,6 @@ while getopts ":O:DIdP:" opt; do
       ;;
     d)  # dry run
       DRYRUN=1
-      >&2 echo Dry run
       ;;
     \?)
       >&2 echo "Invalid option: -$OPTARG" >&2
@@ -79,28 +78,29 @@ DAT=$OUTD/$UUID/$FN
 # RUN is a prefix which allows us to short-circuit execution for dry run
 RUN=""
 if [ ! -z $DRYRUN ]; then
-RUN="echo"
+    RUN="echo"
+    >&2 echo Dry run $0
 fi
 
 # If output file exists and FORCE_OVERWRITE not set, and not in Index Only mode, exit
 if [ -f $DAT ] && [ -z $FORCE_OVERWRITE ] && [ -z $IXO ]; then
->&2 echo Output file $DAT exists.  Stopping.  Use -f to force overwrite.
-exit 1
+    >&2 echo Output file $DAT exists.  Stopping.  Use -f to force overwrite.
+    exit 1
 fi
 
 # Download if not "index only"
 if [ -z $IXO ]; then
->&2 echo Writing to $DAT
+    >&2 echo Writing to $DAT
 
-# Confirm token file exists
-if [ ! -e $TOKEN ]; then
-    >&2 echo ERROR: Token file does not exist: $TOKEN
-    exit 1
-fi
+    # Confirm token file exists
+    if [ ! -e $TOKEN ]; then
+        >&2 echo ERROR: Token file does not exist: $TOKEN
+        exit 1
+    fi
 
-# Documentation of gdc-client: https://docs.gdc.cancer.gov/Data_Transfer_Tool/Users_Guide/Accessing_Built-in_Help/
-# GDC Client saves data to file $OUTD/$UUID/$FN.  We take advantage of this information to index BAM file after download
-$RUN $GDCBIN/gdc-client download -t $TOKEN -d $OUTD $UUID
+    # Documentation of gdc-client: https://docs.gdc.cancer.gov/Data_Transfer_Tool/Users_Guide/Accessing_Built-in_Help/
+    # GDC Client saves data to file $OUTD/$UUID/$FN.  We take advantage of this information to index BAM file after download
+    $RUN $GDCBIN/gdc-client download -t $TOKEN -d $OUTD $UUID
 fi
 
 

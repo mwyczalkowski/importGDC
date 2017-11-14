@@ -39,7 +39,8 @@ if [ -z $DRYRUN ]; then   # DRYRUN not set
     DOCKER="docker"
 elif [ $DRYRUN == "d" ]; then  # DRYRUN is -d: echo the command rather than executing it
     DOCKER="echo docker"
-else    # DRYRUN has multiple d's: strip one d off the argument and pass it to function
+    >&2 echo Dry run in $0
+else    # DRYRUN has multiple d's: pop one d off the argument and pass it to function
     DOCKER="docker"
     DRYRUN=${DRYRUN%?}
     XARGS="$XARGS -$DRYRUN"
@@ -70,8 +71,15 @@ rm -f $ERRLOG $OUTLOG
 echo Writing bsub logs to $OUTLOG and $ERRLOG
 
 BSUB="bsub"
-if [ ! -z $DRYRUN ]; then
+
+if [ -z $DRYRUN ]; then   # DRYRUN not set
+    : # do nothing
+elif [ $DRYRUN == "d" ]; then  # DRYRUN is -d: echo the command rather than executing it
     BSUB="echo $BSUB"
+    >&2 echo Dry run $0
+else    # DRYRUN has multiple d's: pop one d off the argument and pass it to function
+    DRYRUN=${DRYRUN%?}
+    XARGS="$XARGS -$DRYRUN"
 fi
 
 # Where container's /data is mounted on host
@@ -118,8 +126,7 @@ while getopts ":Mt:O:p:n:dBIDg:" opt; do
       >&2 echo Filename: $FN
       ;;
     d) 
-      DRYRUN="d$DRYRUN"
-      >&2 echo Dry run
+      DRYRUN="d$DRYRUN" # -d is a stack of parameters, each script popping one off until get to -d
       ;;
     B)  
       RUNBASH=1
@@ -149,11 +156,11 @@ shift $((OPTIND-1))
 
 if [ -z $TOKEN ]; then
     >&2 echo Error: token not defined \[-t\]
-    exit
+    exit 1
 fi
 if [ -z $OUTD ]; then
     >&2 echo Error: output directory not defined \[-o\]
-    exit
+    exit 1
 fi
 
 for UUID in "$@"
