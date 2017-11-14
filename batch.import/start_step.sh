@@ -15,7 +15,7 @@
 # -D: Download only, do not index
 # -I: Index only, do not Download.  DT must be "BAM"
 # -M: MGI environment
-# -B: Run BASH in docker instead of gdc-client
+# -B: Run BASH in Docker instead of gdc-client
 #
 # If UUID is - then read UUID from STDIN
 # 

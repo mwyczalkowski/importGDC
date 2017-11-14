@@ -3,18 +3,18 @@
 # author: Matthew Wyczalkowski m.wyczalkowski@wustl.edu
 
 # Evaluate status of all samples in batch file 
-# This is specific to MGI (dependent on LSF-specific output to evaluate status)
 # Usage: evaluate_status.sh [options] batch.dat
 #
 # Output written to STDOUT
 
 # options
-# -f status: output only lines matching status, e.g., -f import:completed
+# -f status: output only lines matching status, e.g., -f import:complete
 # -u: include only UUID in output
 # -D: include data file path in output
 # -O DATA_DIR: path to base of download directory (data in $DATA_DIR/GDC_import)
 #       Default: ./data
 # -L LOG_DIR: path to LSF logs. Default: ./bsub-logs
+# -M: MGI environment.  Evaluate LSF logs 
 
 LOG_DIR="./bsub-logs"
 DATA_DIR="./data"
@@ -27,6 +27,9 @@ while getopts ":uf:DO:L:" opt; do
       ;;
     D)  
       DATA_PATH=1
+      ;;
+    M)  
+      MGI=1
       ;;
     f) 
       FILTER=$OPTARG
@@ -52,7 +55,7 @@ shift $((OPTIND-1))
 if [ "$#" -ne 1 ]; then
     >&2 echo Error: Wrong number of arguments
     >&2 echo Usage: update_batch_status.sh \[options\] batch.dat
-    exit
+    exit 1
 fi
 
 BATCH=$1
@@ -60,12 +63,12 @@ BATCH=$1
 DATD="$DATA_DIR/GDC_import"
 if [ ! -e $DATD ]; then
     >&2 echo "Error: Data directory does not exist: $DATD"
-    exit
+    exit 1
 fi
 
 
 # Evaluate download status of gdc-client by examining LSF logs (MGI-specific) and existence of output file
-# Returns one of "ready", "running", "completed", "incomplete", "error"
+# Returns one of "ready", "running", "complete", "incomplete", "error"
 # Usage: test_import_success UUID FN
 # where FN is the filename (relative to data directory) as written by gdc-client
 function test_import_success {
@@ -93,19 +96,21 @@ fi
 
 # Handle the case where LOGOUT does not exist - this might happen during some error conditions.
 # We won't know if running or error, but might establish complete or incomplete
-if [ ! -e $LOGOUT ]; then
-    >&2 echo WARNING: Log file $LOGOUT does not exist.  Continuing.
-else
-    ERROR="Exited with exit code"
-    if fgrep -Fq "$ERROR" $LOGOUT; then
-        echo error
-        return
-    fi
+if [ $MGI ]; then 
+    if [ ! -e $LOGOUT ]; then
+        >&2 echo WARNING: Log file $LOGOUT does not exist.  Continuing.
+    else
+        ERROR="Exited with exit code"
+        if fgrep -Fq "$ERROR" $LOGOUT; then
+            echo error
+            return
+        fi
 
-    SUCCESS="Successfully completed."
-    if ! fgrep -Fxq "$SUCCESS" $LOGOUT; then
-        echo running
-        return
+        SUCCESS="Successfully completed."
+        if ! fgrep -Fxq "$SUCCESS" $LOGOUT; then
+            echo running
+            return
+        fi
     fi
 fi
 
@@ -114,17 +119,17 @@ fi
 FNB=$(basename "$FN")
 EXT="${FNB##*.}"
 
-if [ $EXT == 'BAM' ]; then
+if [ $EXT == 'bam' ]; then
     BAI="$DAT.bai"
     if [ -e $BAI ]; then
-        echo completed
+        echo complete
     else
         echo incomplete
     fi
 else
 # If not BAM file, just test if result file exists
     if [ -e $DAT ]; then
-        echo completed
+        echo complete
     else
         echo incomplete
     fi
