@@ -21,7 +21,7 @@ OUTD="/data/GDC_import"
 GDCBIN="/usr/local/bin"
 
 # http://wiki.bash-hackers.org/howto/getopts_tutorial
-while getopts ":O:DIdP:" opt; do
+while getopts ":O:DIdP:f" opt; do
   case $opt in
     O)
       OUTD="$OPTARG"

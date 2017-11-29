@@ -13,6 +13,7 @@
 # -D: Download only, do not index
 # -I: Index only, do not Download.  DT must be "BAM"
 # -g LSF_GROUP: LSF group to start in.  MGI mode only
+# -f: force overwrite of existing data files
 
 # This is run from the host computer.  
 # Executes script image.init/process_GDC_uuid.sh from within docker container
@@ -109,7 +110,7 @@ fi
 XARGS=""
 LSF_ARGS=""
 # http://wiki.bash-hackers.org/howto/getopts_tutorial
-while getopts ":Mt:O:p:n:dBIDg:" opt; do
+while getopts ":Mt:O:p:n:dBIDg:f" opt; do
   case $opt in
     M)  # example of binary argument
       MGI=1
@@ -143,6 +144,9 @@ while getopts ":Mt:O:p:n:dBIDg:" opt; do
       ;;
     D)  
       XARGS="$XARGS -D"
+      ;;
+    f)  
+      XARGS="$XARGS -f"
       ;;
     g)  
       LSF_ARGS="$LSF_ARGS -g $OPTARG"

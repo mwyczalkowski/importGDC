@@ -16,6 +16,7 @@
 # -I: Index only, do not Download.  DT must be "BAM"
 # -M: MGI environment
 # -B: Run BASH in Docker instead of gdc-client
+# -f: force overwrite of existing data files
 #
 # If UUID is - then read UUID from STDIN
 # 
@@ -72,7 +73,7 @@ DATA_DIR="./data"
 STEP="import"
 TOKEN="/data/token/gdc-user-token.txt"
 
-while getopts ":dg:S:O:s:t:IDMB" opt; do
+while getopts ":dg:S:O:s:t:IDMBf" opt; do
   case $opt in
     d)  # -d is a stack of parameters, each script popping one off until get to -d
       DRYRUN="d$DRYRUN"
@@ -106,6 +107,9 @@ while getopts ":dg:S:O:s:t:IDMB" opt; do
       ;;
     M)  
       XARGS="$XARGS -M"
+      ;;
+    f)  
+      XARGS="$XARGS -f"
       ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
