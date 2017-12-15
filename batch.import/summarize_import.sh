@@ -6,7 +6,9 @@
 # Usage: summarize_import.sh [options] UUID [UUID2 ...]
 # If UUID is - then read UUID from STDIN
 #
-# Output written to STDOUT
+# Output written to STDOUT.  Format:
+#  SampleName, Case, Disease, ExpStrategy, SampType, DataPath, DataFormat, Reference, UUID
+# where SampleName is a generated unique name for this sample
 
 # options
 # -S SR_FILE: path to SR data file.  Default: config/SR.dat

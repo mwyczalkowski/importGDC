@@ -2,7 +2,7 @@
 # Usage: GDC_import.sh [options] UUID [UUID2 ...]
 #
 # -M: run in MGI environment
-# -O: output directory on localhost.  Mandatory
+# -O: output directory on host.  Mandatory
 # -t: token file path in container.  Mandatory
 # -n: filename associated with UUID.  Mandatory
 # -p: dataformat (BAM or FASTQ).  Mandatory
