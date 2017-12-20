@@ -12,7 +12,7 @@
 
 # options
 # -S SR_FILE: path to SR data file.  Default: config/SR.dat
-# -O DATA_DIR: path to base of download directory (will write to $DATA_DIR/GDC_import). Default: ./data
+# -O DATA_DIR: path to base of download directory (downloads will be written to to $DATA_DIR/GDC_import/data). Default: ./data
 # -r REF: reference name - assume same for all SR.  Default: hg19
 # -H: Print header
 
@@ -120,7 +120,7 @@ if [ "$#" -lt 1 ]; then
     exit
 fi
 
-DATD="$DATA_DIR/GDC_import"
+DATD="$DATA_DIR/GDC_import/data"
 if [ ! -e $DATD ]; then
     >&2 echo "Error: Data directory does not exist: $DATD"
     exit

@@ -11,7 +11,7 @@
 # -f status: output only lines matching status, e.g., -f import:complete
 # -u: include only UUID in output
 # -D: include data file path in output
-# -O DATA_DIR: path to base of download directory (data in $DATA_DIR/GDC_import)
+# -O DATA_DIR: path to base of download directory (we then expect download data in $DATA_DIR/GDC_import/data)
 #       Default: ./data
 # -L LOG_DIR: path to LSF logs. Default: ./bsub-logs
 # -M: MGI environment.  Evaluate LSF logs 
@@ -60,7 +60,7 @@ fi
 
 BATCH=$1
 
-DATD="$DATA_DIR/GDC_import"
+DATD="$DATA_DIR/GDC_import/data"  # TODO: this should be able to be set more precisely
 if [ ! -e $DATD ]; then
     >&2 echo "Error: Data directory does not exist: $DATD"
     exit 1

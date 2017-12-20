@@ -9,7 +9,7 @@
 #     with each called function called in dry run mode if it gets one -d, and popping off one and passing rest otherwise
 # -g LSF_GROUP: LSF group to use starting job
 # -S SR_FILE: path to SR data file.  Default: config/SR.dat
-# -O DATA_DIR: path to base of download directory (will write to $DATA_DIR/GDC_import). Default: ./data
+# -O DATA_DIR: path to base of download directory (will write to $DATA_DIR/GDC_import/data). Default: ./data
 # -s STEP: Step to process.  Default (and only available value) is 'import'
 # -t TOKEN: token filename, path relative to container.  Default: /data/token/gdc-user-token.txt
 # -D: Download only, do not index

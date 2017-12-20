@@ -15,6 +15,9 @@
 # -g LSF_GROUP: LSF group to start in.  MGI mode only
 # -f: force overwrite of existing data files
 
+# TODO: Allow argument for process_GDC_uuid -O OUTD_C to be passed.  Currently defalt is /data/GDC_import/data
+
+
 # This is run from the host computer.  
 # Executes script image.init/process_GDC_uuid.sh from within docker container
 

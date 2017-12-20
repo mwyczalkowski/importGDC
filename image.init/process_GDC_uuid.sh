@@ -10,14 +10,14 @@
 #   FN - filename of object.  Required, used only for indexing
 #   DF - dataformat of object (BAM, FASTQ).  Required
 # Options:
-#   -O OUTD: base of imported data dir, visible from container.  Default is /data/GDC_import.  Optional
+#   -O OUTD: base of imported data dir, visible from container.  Default is /data/GDC_import/data.  Optional
 #   -D: Download only, do not index
 #   -I: Index only, do not Download.  DT must be "BAM"
 #   -d: dry run, simply print commands which would be executed for principal steps
 #   -f: force overwrite of existing data files
 #   -P GDCBIN: Path to gdc-client.  Default: /usr/local/bin
 
-OUTD="/data/GDC_import"
+OUTD="/data/GDC_import/data"
 GDCBIN="/usr/local/bin"
 
 # http://wiki.bash-hackers.org/howto/getopts_tutorial
