@@ -4,6 +4,7 @@
 # -M: run in MGI environment
 # -O: output directory on host.  Mandatory
 # -t: token file path in container.  Mandatory
+# -l LOGD_H: log directory path in host.  Mandatory for MGI mode
 # -n: filename associated with UUID.  Mandatory
 # -p: dataformat (BAM or FASTQ).  Mandatory
 # -d: dry run - print out docker statement but do not execute (for debugging)
@@ -70,12 +71,12 @@ OUTD=$2
 TOKEN=$3
 FN=$4
 DF=$5
+LOGD_H=$6
 
-# logs will be written to $SCRIPTD/bsub_run-step_$STEP.err, .out
-LOGD="bsub-logs"
-mkdir -p $LOGD
-ERRLOG="$LOGD/$UUID.err"
-OUTLOG="$LOGD/$UUID.out"
+# logs will be written to $LOGD_H/bsub_run-step_$STEP.err, .out
+mkdir -p $LOGD_H
+ERRLOG="$LOGD_H/$UUID.err"
+OUTLOG="$LOGD_H/$UUID.out"
 LOGS="-e $ERRLOG -o $OUTLOG"
 rm -f $ERRLOG $OUTLOG
 echo Writing bsub logs to $OUTLOG and $ERRLOG
@@ -113,7 +114,7 @@ fi
 XARGS=""
 LSF_ARGS=""
 # http://wiki.bash-hackers.org/howto/getopts_tutorial
-while getopts ":Mt:O:p:n:dBIDg:f" opt; do
+while getopts ":Mt:O:p:n:dBIDg:fl:" opt; do
   case $opt in
     M)  # example of binary argument
       MGI=1
@@ -134,6 +135,10 @@ while getopts ":Mt:O:p:n:dBIDg:f" opt; do
     n)
       FN=$OPTARG
       >&2 echo Filename: $FN
+      ;;
+    l)
+      LOGD_H=$OPTARG
+      >&2 echo Log Directory: $LOGD_H
       ;;
     d) 
       DRYRUN="d$DRYRUN" # -d is a stack of parameters, each script popping one off until get to -d
@@ -180,9 +185,13 @@ for UUID in "$@"
 do
 
 if [ $MGI ]; then
-processUUID_MGI $UUID $OUTD $TOKEN $FN $DF
+    if [ -z $LOGD_H ]; then
+        >&2 echo Error: Log directory not defined \[-l\]
+        exit 1
+    fi
+    processUUID_MGI $UUID $OUTD $TOKEN $FN $DF $LOGD_H
 else
-processUUID $UUID $OUTD $TOKEN $FN $DF
+    processUUID $UUID $OUTD $TOKEN $FN $DF
 fi
 
 done

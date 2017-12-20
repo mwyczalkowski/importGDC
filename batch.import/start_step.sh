@@ -11,7 +11,8 @@
 # -S SR_FILE: path to SR data file.  Default: config/SR.dat
 # -O DATA_DIR: path to base of download directory (will write to $DATA_DIR/GDC_import/data). Default: ./data
 # -s STEP: Step to process.  Default (and only available value) is 'import'
-# -t TOKEN: token filename, path relative to container.  Default: /data/token/gdc-user-token.txt
+# -t TOKEN_C: token filename, path relative to container.  Required
+# -l LOGD_H: Log output directory.  Required for MGI
 # -D: Download only, do not index
 # -I: Index only, do not Download.  DT must be "BAM"
 # -M: MGI environment
@@ -63,7 +64,7 @@ else    # DRYRUN has multiple d's: strip one d off the argument and pass it to f
     XARGS="$XARGS -$DRYRUN"
 fi
 
-$BASH $IMPORTGDC_HOME/GDC_import.sh $XARGS -t $TOKEN -O $DATA_DIR -p $DF -n $FN  $UUID
+$BASH $IMPORTGDC_HOME/GDC_import.sh $XARGS -t $TOKEN_C -O $DATA_DIR -p $DF -n $FN  $UUID
 
 }
 
@@ -71,9 +72,8 @@ $BASH $IMPORTGDC_HOME/GDC_import.sh $XARGS -t $TOKEN -O $DATA_DIR -p $DF -n $FN 
 SR="config/SR.dat"
 DATA_DIR="./data"
 STEP="import"
-TOKEN="/data/token/gdc-user-token.txt"
 
-while getopts ":dg:S:O:s:t:IDMBf" opt; do
+while getopts ":dg:S:O:s:t:IDMBfl:" opt; do
   case $opt in
     d)  # -d is a stack of parameters, each script popping one off until get to -d
       DRYRUN="d$DRYRUN"
@@ -89,8 +89,8 @@ while getopts ":dg:S:O:s:t:IDMBf" opt; do
       echo "SR File: $SR" >&2
       ;;
     t) 
-      TOKEN=$OPTARG
-      echo "Token File: $TOKEN" >&2
+      TOKEN_C=$OPTARG
+      echo "Token File: $TOKEN_C" >&2
       ;;
     O) # set DATA_DIR
       DATA_DIR="$OPTARG"
@@ -111,6 +111,9 @@ while getopts ":dg:S:O:s:t:IDMBf" opt; do
     f)  
       XARGS="$XARGS -f"
       ;;
+    l)  
+      XARGS="$XARGS -l $OPTARG"
+      ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
       exit 1
@@ -129,6 +132,10 @@ if [ -z $SR ]; then
 fi
 if [ ! -e $SR ]; then
     >&2 echo "Error: $SR does not exist"
+    exit 1
+fi
+if [ -z $TOKEN_C ]; then
+    >&2 echo Error: Token file not defined \(-t\)
     exit 1
 fi
 
