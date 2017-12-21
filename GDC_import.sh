@@ -15,6 +15,7 @@
 # -I: Index only, do not Download.  DT must be "BAM"
 # -g LSF_GROUP: LSF group to start in.  MGI mode only
 # -f: force overwrite of existing data files
+# -T TRICKLE_RATE: Run using trickle to shape data usage; rate is maximum cumulative download rate
 
 # TODO: Allow argument for process_GDC_uuid -O OUTD_C to be passed.  Currently defalt is /data/GDC_import/data
 
@@ -114,7 +115,7 @@ fi
 XARGS=""
 LSF_ARGS=""
 # http://wiki.bash-hackers.org/howto/getopts_tutorial
-while getopts ":Mt:O:p:n:dBIDg:fl:" opt; do
+while getopts ":Mt:O:p:n:dBIDg:fl:T:" opt; do
   case $opt in
     M)  # example of binary argument
       MGI=1
@@ -159,6 +160,9 @@ while getopts ":Mt:O:p:n:dBIDg:fl:" opt; do
     g)  
       LSF_ARGS="$LSF_ARGS -g $OPTARG"
       >&2 echo LSF Group: $OPTARG
+      ;;
+    T)  
+      XARGS="$XARGS -T $OPTARG"
       ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2

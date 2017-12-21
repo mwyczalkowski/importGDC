@@ -18,6 +18,7 @@
 # -M: MGI environment
 # -B: Run BASH in Docker instead of gdc-client
 # -f: force overwrite of existing data files
+# -T TRICKLE_RATE: Run using trickle to shape data usage; rate is maximum cumulative download rate
 #
 # If UUID is - then read UUID from STDIN
 # 
@@ -73,7 +74,7 @@ SR="config/SR.dat"
 DATA_DIR="./data"
 STEP="import"
 
-while getopts ":dg:S:O:s:t:IDMBfl:" opt; do
+while getopts ":dg:S:O:s:t:IDMBfl:T:" opt; do
   case $opt in
     d)  # -d is a stack of parameters, each script popping one off until get to -d
       DRYRUN="d$DRYRUN"
@@ -113,6 +114,9 @@ while getopts ":dg:S:O:s:t:IDMBfl:" opt; do
       ;;
     l)  
       XARGS="$XARGS -l $OPTARG"
+      ;;
+    T)  
+      XARGS="$XARGS -T $OPTARG"
       ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2

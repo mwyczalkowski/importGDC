@@ -16,12 +16,15 @@
 #   -d: dry run, simply print commands which would be executed for principal steps
 #   -f: force overwrite of existing data files
 #   -P GDCBIN: Path to gdc-client.  Default: /usr/local/bin
+#   -T TRICKLE_RATE: Run using trickle to shape data usage; rate is maximum cumulative download rate
+#       e.g., -T 75000 will run `trickle -s -d 75000 gdc-client ...`.  See https://github.com/mariusae/trickle
+
 
 OUTD="/data/GDC_import/data"
 GDCBIN="/usr/local/bin"
 
 # http://wiki.bash-hackers.org/howto/getopts_tutorial
-while getopts ":O:DIdP:f" opt; do
+while getopts ":O:DIdP:fT:" opt; do
   case $opt in
     O)
       OUTD="$OPTARG"
@@ -45,6 +48,10 @@ while getopts ":O:DIdP:f" opt; do
       ;;
     d)  # dry run
       DRYRUN=1
+      ;;
+    T)
+      TRICKLE_RATE="$OPTARG"
+      >&2 echo Using trickle with rate $GDCBIN
       ;;
     \?)
       >&2 echo "Invalid option: -$OPTARG" >&2
@@ -80,6 +87,12 @@ RUN=""
 if [ ! -z $DRYRUN ]; then
     RUN="echo"
     >&2 echo Dry run $0
+fi
+
+# use trickle to slow down downloads to play nicely in clusters, especially with multiple jobs running
+if [ $TRICKLE_RATE ]; then
+    TRICKLE="trickle -s -d $TRICKLE_RATE"
+    RUN="$RUN $TRICKLE"
 fi
 
 # If output file exists and FORCE_OVERWRITE not set, and not in Index Only mode, exit

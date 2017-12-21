@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y \
     git \
     jq \
     libnss-sss \
+    trickle \
     samtools \
     vim \
     wget \
