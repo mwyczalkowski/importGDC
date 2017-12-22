@@ -51,7 +51,7 @@ while getopts ":O:DIdP:fT:" opt; do
       ;;
     T)
       TRICKLE_RATE="$OPTARG"
-      >&2 echo Using trickle with rate $GDCBIN
+      >&2 echo Using trickle with rate $OPTARG
       ;;
     \?)
       >&2 echo "Invalid option: -$OPTARG" >&2
