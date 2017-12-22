@@ -16,6 +16,7 @@
 # -g LSF_GROUP: LSF group to start in.  MGI mode only
 # -f: force overwrite of existing data files
 # -T TRICKLE_RATE: Run using trickle to shape data usage; rate is maximum cumulative download rate
+# -E RATE: throttle download rate using MGI using LSF queue (Matt Callaway test).  Rate in mbps, try 600
 
 # TODO: Allow argument for process_GDC_uuid -O OUTD_C to be passed.  Currently defalt is /data/GDC_import/data
 
@@ -60,7 +61,6 @@ fi
 # This is the command that will execute on docker
 CMD="/bin/bash $PROCESS $XARGS $UUID $TOKEN $FN $DF"
 
-#$DOCKER run -v $OUTD:/data -it $DOCKER_IMAGE $CMD >&2
 $DOCKER run -v $OUTD:/data $DOCKER_IMAGE $CMD >&2
 
 }
@@ -82,7 +82,7 @@ LOGS="-e $ERRLOG -o $OUTLOG"
 rm -f $ERRLOG $OUTLOG
 echo Writing bsub logs to $OUTLOG and $ERRLOG
 
-BSUB="bsub"
+BSUB="$BSUB_PREFIX bsub"
 
 if [ -z $DRYRUN ]; then   # DRYRUN not set
     : # do nothing
@@ -100,22 +100,25 @@ export LSF_DOCKER_VOLUMES="$OUTD:/data"
 
 # for testing, so that it goes faster, do this on blade18-2-11.gsc.wustl.edu
 #DOCKERHOST="-m blade18-2-11.gsc.wustl.edu"
+# TODO: add the flag below, as in SomaticWrapper.CPTAC3.b1/SomaticWrapper.workflow/src/submit-MGI.sh
+# -h DOCKERHOST - define a host to execute the image
 
 if [ -z $RUNBASH ]; then
 
     PROCESS="$IMPORTGDC_HOME/image.init/process_GDC_uuid.sh"
 
     CMD="/bin/bash $PROCESS $XARGS $UUID $TOKEN $FN $DF"
-    $BSUB -q research-hpc $DOCKERHOST $LSF_ARGS $LOGS -a "docker($DOCKER_IMAGE)" "$CMD"
+    $BSUB $LSFQ $DOCKERHOST $LSF_ARGS $LOGS -a "docker($DOCKER_IMAGE)" "$CMD"
 else
-    $BSUB -q research-hpc $DOCKERHOST $LSF_ARGS -Is -a "docker($DOCKER_IMAGE)" "/bin/bash"
+    $BSUB $LSFQ $DOCKERHOST $LSF_ARGS -Is -a "docker($DOCKER_IMAGE)" "/bin/bash"
 fi
 }
 
 XARGS=""
 LSF_ARGS=""
-# http://wiki.bash-hackers.org/howto/getopts_tutorial
-while getopts ":Mt:O:p:n:dBIDg:fl:T:" opt; do
+LSFQ="-q research-hpc"  # MGI LSF queue.  Modfied if using data transfer queue for data throttling
+BSUB_PREFIX=""
+while getopts ":Mt:O:p:n:dBIDg:fl:T:E:" opt; do
   case $opt in
     M)  # example of binary argument
       MGI=1
@@ -163,6 +166,11 @@ while getopts ":Mt:O:p:n:dBIDg:fl:T:" opt; do
       ;;
     T)  
       XARGS="$XARGS -T $OPTARG"
+      ;;
+    E)  # Perform MGI-specific throttling 
+      BSUB_PREFIX="LSF_DOCKER_NETWORK=host LSF_DOCKER_CGROUP=netcap"  
+      LSF_ARGS="$LSF_ARGS -R \"rusage[internet_download_mbps=$OPTARG]\""
+      LSFQ="-q lims-i1-datatransfer"
       ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
