@@ -7,7 +7,7 @@
 # If UUID is - then read UUID from STDIN
 #
 # Output written to STDOUT.  Format:
-#  SampleName, Case, Disease, ExpStrategy, SampType, DataPath, DataFormat, Reference, UUID
+#  SampleName, Case, Disease, ExpStrategy, SampType, DataPath, Size, DataFormat, Reference, UUID
 # where SampleName is a generated unique name for this sample
 
 # options
@@ -42,6 +42,7 @@ function summarize_import {
     ES=$(echo "$SR" | cut -f 3)
     STL=$(echo "$SR" | cut -f 4)
     FN=$(echo "$SR" | cut -f 6)
+    DS=$(echo "$SR" | cut -f 7)
     DF=$(echo "$SR" | cut -f 8)  # data format
     UUID=$(echo "$SR" | cut -f 9)
 
@@ -70,7 +71,7 @@ function summarize_import {
 
     SN=$(get_SN $CASE "$STL" $ES $FN $DF)  # quote STL because it has spaces
 
-    printf "$SN\t$CASE\t$DIS\t$ES\t$ST\t$FNF\t$DF\t$REF\t$UUID\n"
+    printf "$SN\t$CASE\t$DIS\t$ES\t$ST\t$FNF\t$DS\t$DF\t$REF\t$UUID\n"
 }
 
 # Default values
@@ -129,7 +130,7 @@ fi
 if [ $HEADER ]; then
     dt=$(date '+%d/%m/%Y %H:%M:%S');
     echo "# Summary Date $dt" 
-    printf "# SampleName\tCase\tDisease\tExpStrategy\tSampType\tDataPath\tDataFormat\tReference\tUUID\n"
+    printf "# SampleName\tCase\tDisease\tExpStrategy\tSampType\tDataPath\tFileSize\tDataFormat\tReference\tUUID\n"
 fi
 
 # this allows us to get UUIDs in one of two ways:
