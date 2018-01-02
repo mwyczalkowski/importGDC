@@ -88,15 +88,15 @@ while getopts ":dg:S:O:s:t:IDMBfl:T:E:" opt; do
       ;;
     S) 
       SR=$OPTARG
-      echo "SR File: $SR" >&2
+      >&2 echo "SR File: $SR" 
       ;;
     t) 
       TOKEN_C=$OPTARG
-      echo "Token File: $TOKEN_C" >&2
+      >&2 echo "Token File: $TOKEN_C" 
       ;;
     O) # set DATA_DIR
       DATA_DIR="$OPTARG"
-      echo "Data Dir: $DATA_DIR" >&2
+      >&2 echo "Data Dir: $DATA_DIR" 
       ;;
     s) 
       STEP="$OPTARG"
@@ -123,11 +123,11 @@ while getopts ":dg:S:O:s:t:IDMBfl:T:E:" opt; do
       XARGS="$XARGS -E $OPTARG"
       ;;
     \?)
-      echo "Invalid option: -$OPTARG" >&2
+      >&2 echo "Invalid option: -$OPTARG" 
       exit 1
       ;;
     :)
-      echo "Option -$OPTARG requires an argument." >&2
+      >&2 echo "Option -$OPTARG requires an argument." 
       exit 1
       ;;
   esac
