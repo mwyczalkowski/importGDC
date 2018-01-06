@@ -22,6 +22,6 @@ RUN cd /usr/local \
     && mv gdc-client /usr/local/bin
 
 RUN cd /usr/local \
-    &&  git  clone https://github.com/ding-lab/importGDC.git
+    && git  clone https://github.com/ding-lab/importGDC.git
 
 CMD ["/bin/bash"]

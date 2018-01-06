@@ -1,1 +1,1 @@
-docker build -t mwyczalkowski/importgdc . 
+docker build -t mwyczalkowski/importgdc:latest . 
