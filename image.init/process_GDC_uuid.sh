@@ -4,6 +4,7 @@
 
 # Usage: process_GDC_uuid.sh [options] UUID TOKEN FN DT
 # Download and index (if BAM) data from GDC.  This script runs within docker container
+# Indexing will also create a flagstat summary file
 # Arguments:
 #   UUID - UUID of object to download.  Mandatory
 #   TOKEN - token filename visible from container.  Mandatory
@@ -128,6 +129,7 @@ exit 1
 fi
 
 $RUN /usr/bin/samtools index $DAT
+$RUN /usr/bin/samtools flagstat $DAT
 
 fi
 

@@ -39,10 +39,6 @@ DF=$5
 # Container: /data
 # Host: $OUTD
 
-if [ $RUNBASH ]; then
->&2 echo RUNBASH not implemented for non-MGI docker
-exit 1
-fi
 
 
 # If DRYRUN is 'd' then we're in dry run mode (only print the called function),
@@ -61,7 +57,14 @@ fi
 # This is the command that will execute on docker
 CMD="/bin/bash $PROCESS $XARGS $UUID $TOKEN $FN $DF"
 
+if [ ! $RUNBASH ]; then
 $DOCKER run -v $OUTD:/data $DOCKER_IMAGE $CMD >&2
+
+else
+
+$DOCKER run -it -v $OUTD:/data $DOCKER_IMAGE /bin/bash >&2
+
+fi
 
 }
 
