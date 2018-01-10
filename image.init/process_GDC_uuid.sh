@@ -129,7 +129,7 @@ exit 1
 fi
 
 $RUN /usr/bin/samtools index $DAT
-$RUN /usr/bin/samtools flagstat $DAT
+$RUN /usr/bin/samtools flagstat $DAT > ${DAT}.flagstat
 
 fi
 
