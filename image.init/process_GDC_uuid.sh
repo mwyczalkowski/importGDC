@@ -120,7 +120,6 @@ fi
 
 ## Now index if this is a BAM file, and not download-only
 if [ $DT == "BAM" ] && [ -z $DLO ] ; then
->&2 echo Indexing $DAT
 
 # Confirm $DAT exists
 if [ ! -f $DAT ]; then
@@ -128,7 +127,9 @@ if [ ! -f $DAT ]; then
 exit 1
 fi
 
+>&2 echo Indexing $DAT
 $RUN /usr/bin/samtools index $DAT
+>&2 echo Flagstat $DAT
 $RUN /usr/bin/samtools flagstat $DAT > ${DAT}.flagstat
 
 fi
