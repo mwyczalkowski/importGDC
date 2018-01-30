@@ -44,8 +44,20 @@ if [ $NMATCH -ne "1" ]; then
     exit 1;
 fi
 
-FN=$(grep $UUID $SR | cut -f 6)
-DF=$(grep $UUID $SR | cut -f 8)
+# Columns of SR.dat - Jan2018 update with sample_name
+#     1 sample_name
+#     2 case
+#     3 disease
+#     4 experimental_strategy
+#     5 sample_type
+#     6 samples
+#     7 filename
+#     8 filesize
+#     9 data_format
+#    10 UUID
+#    11 MD5
+FN=$(grep $UUID $SR | cut -f 7)
+DF=$(grep $UUID $SR | cut -f 9)
 
 
 if [ -z "$FN" ]; then

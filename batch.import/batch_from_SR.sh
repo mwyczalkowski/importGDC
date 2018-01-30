@@ -17,22 +17,30 @@ fi
 
 SR=$1
 
-source "$IMPORTGDC_HOME/batch.import/get_SN.sh"
-
-# SR columns: case, disease, experimental_strategy, sample_type, samples, filename, filesize, data_format, UUID, md5sum
+# Columns of SR.dat - Jan2018 update with sample_name
+#     1 sample_name
+#     2 case
+#     3 disease
+#     4 experimental_strategy
+#     5 sample_type
+#     6 samples
+#     7 filename
+#     8 filesize
+#     9 data_format
+#    10 UUID
+#    11 MD5
 
 
 while read line; do
 
-    CASE=$(echo "$line" | cut -f 1)
-    ES=$(echo "$line" | cut -f 3)
-    UUID=$(echo "$line" | cut -f 9)
-    FN=$(echo "$line" | cut -f 6)
+    SN=$(echo "$line" | cut -f 1)  # Sample name defined in SR file now
+    CASE=$(echo "$line" | cut -f 2)
+    ES=$(echo "$line" | cut -f 4)
+    UUID=$(echo "$line" | cut -f 10)
+    FN=$(echo "$line" | cut -f 7)
 
-    STL=$(echo "$line" | cut -f 4) # sample_type - long format: "Blood Derived Normal" or "Primary Tumor"
-    DF=$(echo "$line" | cut -f 8)
-
-    SN=$(get_SN $CASE "$STL" $ES $FN $DF)  # quote STL because it has spaces
+    STL=$(echo "$line" | cut -f 5) # sample_type - long format: "Blood Derived Normal" or "Primary Tumor"
+    DF=$(echo "$line" | cut -f 9)
 
     # Finally, create expected filename as imported by gdc-client.  This consists of UUID/filename
     GDCFN="$UUID/$FN"

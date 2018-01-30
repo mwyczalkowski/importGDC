@@ -16,9 +16,6 @@
 # -r REF: reference name - assume same for all SR.  Default: hg19
 # -H: Print header
 
-# Script to create sample name from case, experimental_strategy, and sample_type abbreviation
-source "$IMPORTGDC_HOME/batch.import/get_SN.sh"
-
 # For a given UUID, confirm existence of output file and (if appropriate) index file.
 # output a "bam map" file which can later be used as input for processing
 #
@@ -37,14 +34,15 @@ function summarize_import {
         exit
     fi
     
-    CASE=$(echo "$SR" | cut -f 1)
-    DIS=$(echo "$SR" | cut -f 2)
-    ES=$(echo "$SR" | cut -f 3)
-    STL=$(echo "$SR" | cut -f 4)
-    FN=$(echo "$SR" | cut -f 6)
-    DS=$(echo "$SR" | cut -f 7)
-    DF=$(echo "$SR" | cut -f 8)  # data format
-    UUID=$(echo "$SR" | cut -f 9)
+    SN=$(echo "$SR" | cut -f 1)
+    CASE=$(echo "$SR" | cut -f 2)
+    DIS=$(echo "$SR" | cut -f 3)
+    ES=$(echo "$SR" | cut -f 4)
+    STL=$(echo "$SR" | cut -f 5)
+    FN=$(echo "$SR" | cut -f 7)
+    DS=$(echo "$SR" | cut -f 8)
+    DF=$(echo "$SR" | cut -f 9)  # data format
+    UUID=$(echo "$SR" | cut -f 10)
 
     if [ "$STL" == "Blood Derived Normal" ]; then 
         ST="normal"
@@ -69,7 +67,6 @@ function summarize_import {
         fi
     fi
 
-    SN=$(get_SN $CASE "$STL" $ES $FN $DF)  # quote STL because it has spaces
 
     printf "$SN\t$CASE\t$DIS\t$ES\t$ST\t$FNF\t$DS\t$DF\t$REF\t$UUID\n"
 }
