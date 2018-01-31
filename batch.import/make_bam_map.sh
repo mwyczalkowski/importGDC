@@ -2,26 +2,42 @@
 
 # author: Matthew Wyczalkowski m.wyczalkowski@wustl.edu
 
-# Summarize details of given samples and check success of 
+# Summarize details of given samples and check success of download
 # Usage: summarize_import.sh [options] UUID [UUID2 ...]
 # If UUID is - then read UUID from STDIN
 #
-# Output written to STDOUT.  Format:
-#  SampleName, Case, Disease, ExpStrategy, SampType, DataPath, Size, DataFormat, Reference, UUID
+# Output written to STDOUT.  Format is TSV with the following columns:
+#     1  SampleName
+#     2  Case
+#     3  Disease
+#     4  ExpStrategy
+#     5  SampType
+#     6  DataPath
+#     7  FileSize
+#     8  DataFormat
+#     9  Reference
+#    10  UUID
 # where SampleName is a generated unique name for this sample
 
 # options
 # -S SR_FILE: path to SR data file.  Default: config/SR.dat
 # -O DATA_DIR: path to base of download directory (downloads will be written to to $DATA_DIR/GDC_import/data). Default: ./data
 # -r REF: reference name - assume same for all SR.  Default: hg19
+# -w: don't print warnings about missing data
 # -H: Print header
 
 # For a given UUID, confirm existence of output file and (if appropriate) index file.
-# output a "bam map" file which can later be used as input for processing
+# output a "bam map" file which can later be used as input for processing.  Note that
+# all information used to generate BamMap comes from SR file and local configuration (paths, etc),
+# We evaluate success of download by checking whether data file exists in the expected path;
+# no effort is made to critically compare downloaded file against that expected from SR file (though
+# that would be helpful)
 #
+# Procedure:
 # * extract information from SR file 
 # * Make sure output file exists
 # * If this is a BAM, make sure .bai file exists.  Print warning if it does not
+#
 function summarize_import {
 # SR columns: case, disease, experimental_strategy, sample_type, samples, filename, filesize, data_format, UUID, md5sum
     UUID=$1
@@ -46,6 +62,8 @@ function summarize_import {
 
     if [ "$STL" == "Blood Derived Normal" ]; then 
         ST="normal"
+    elif [ "$STL" == "Solid Tissue Normal" ]; then 
+        ST="normal"
     elif [ "$STL" == "Primary Tumor" ]; then 
         ST="tumor"
     else
@@ -55,14 +73,14 @@ function summarize_import {
 
     # Test existence of output file and index file
     FNF=$(echo "$DATD/$UUID/$FN" | tr -s '/')  # append full path to data file, normalize path separators
-    if [ ! -e $FNF ]; then
+    if [ ! -e $FNF ] && [ -z $NOWARN ]; then
         >&2 echo WARNING: Data file does not exist: $FNF
     fi
 
     if [ $DF == "BAM" ]; then
         # If BAM file, test to make sure that .bai file generated
         BAI="$FNF.bai"
-        if [ ! -e $BAI ]; then
+        if [ ! -e $BAI ] && [ -z $NOWARN ]; then
             >&2 echo WARNING: Index file does not exist: $BAI
         fi
     fi
@@ -77,7 +95,7 @@ DATA_DIR="./data"
 REF="hg19"
 
 # http://wiki.bash-hackers.org/howto/getopts_tutorial
-while getopts ":S:O:r:H" opt; do
+while getopts ":S:O:r:Hw" opt; do
   case $opt in
     S) 
       SR_FILE=$OPTARG
@@ -90,6 +108,9 @@ while getopts ":S:O:r:H" opt; do
       ;;
     H) 
       HEADER=1
+      ;;
+    w) 
+      NOWARN=1
       ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
@@ -125,8 +146,8 @@ if [ ! -e $DATD ]; then
 fi
 
 if [ $HEADER ]; then
-    dt=$(date '+%d/%m/%Y %H:%M:%S');
-    echo "# Summary Date $dt" 
+#    dt=$(date '+%d/%m/%Y %H:%M:%S');
+#    echo "# Summary Date $dt" 
     printf "# SampleName\tCase\tDisease\tExpStrategy\tSampType\tDataPath\tFileSize\tDataFormat\tReference\tUUID\n"
 fi
 
