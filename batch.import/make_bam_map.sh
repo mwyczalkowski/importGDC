@@ -3,7 +3,7 @@
 # author: Matthew Wyczalkowski m.wyczalkowski@wustl.edu
 
 # Summarize details of given samples and check success of download
-# Usage: summarize_import.sh [options] UUID [UUID2 ...]
+# Usage: make_bam_map.sh [options] UUID [UUID2 ...]
 # If UUID is - then read UUID from STDIN
 #
 # Output written to STDOUT.  Format is TSV with the following columns:
@@ -135,7 +135,7 @@ fi
 
 if [ "$#" -lt 1 ]; then
     >&2 echo Error: Wrong number of arguments
-    >&2 echo Usage: summarize_import.sh [options] UUID [UUID2 ...]
+    >&2 echo Usage: make_bam_map.sh [options] UUID [UUID2 ...]
     exit
 fi
 
