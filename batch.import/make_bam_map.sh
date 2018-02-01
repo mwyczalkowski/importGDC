@@ -3,8 +3,9 @@
 # author: Matthew Wyczalkowski m.wyczalkowski@wustl.edu
 
 # Summarize details of given samples and check success of download
-# Usage: make_bam_map.sh [options] UUID [UUID2 ...]
+# Usage: make_bam_map.sh [options] [UUID [UUID2 ...] ]
 # If UUID is - then read UUID from STDIN
+# If UUID is not defined, -H will print header and exit, error otherwise
 #
 # Output written to STDOUT.  Format is TSV with the following columns:
 #     1  SampleName
@@ -124,6 +125,21 @@ while getopts ":S:O:r:Hw" opt; do
 done
 shift $((OPTIND-1))
 
+if [ $HEADER ]; then
+#    dt=$(date '+%d/%m/%Y %H:%M:%S');
+#    echo "# Summary Date $dt" 
+    printf "# SampleName\tCase\tDisease\tExpStrategy\tSampType\tDataPath\tFileSize\tDataFormat\tReference\tUUID\n"
+    if [ "$#" -eq 0 ]; then
+        exit 0
+    fi
+    >&2 echo printed header, but not exiting
+fi
+
+if [ "$#" -lt 1 ]; then
+    >&2 echo Error: No UUIDs passed
+    exit 1
+fi
+
 if [ -z $SR_FILE ]; then
     >&2 echo Error: SR file not defined \(-S\)
     exit
@@ -133,23 +149,12 @@ if [ ! -e $SR_FILE ]; then
     exit
 fi
 
-if [ "$#" -lt 1 ]; then
-    >&2 echo Error: Wrong number of arguments
-    >&2 echo Usage: make_bam_map.sh [options] UUID [UUID2 ...]
-    exit
-fi
-
 DATD="$DATA_DIR/GDC_import/data"
 if [ ! -e $DATD ]; then
     >&2 echo "Error: Data directory does not exist: $DATD"
     exit
 fi
 
-if [ $HEADER ]; then
-#    dt=$(date '+%d/%m/%Y %H:%M:%S');
-#    echo "# Summary Date $dt" 
-    printf "# SampleName\tCase\tDisease\tExpStrategy\tSampType\tDataPath\tFileSize\tDataFormat\tReference\tUUID\n"
-fi
 
 # this allows us to get UUIDs in one of two ways:
 # 1: start_step.sh ... UUID1 UUID2 UUID3
