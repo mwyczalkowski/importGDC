@@ -19,7 +19,7 @@
 #       Default: ./data
 # -L LOG_DIR: path to LSF logs. Default: ./bsub-logs
 # -M: MGI environment.  Evaluate LSF logs 
-# -C CONFIG_HOME: location of configuration and files.  Optional if batch file specified as path, otherwise required.
+# -C IMPORT_CONFIGD_H: location of configuration and files.  Optional if batch file specified as path, otherwise required.
 
 LOG_DIR="./bsub-logs"
 DATA_DIR="./data"
@@ -46,7 +46,7 @@ while getopts ":uf:DO:L:C:" opt; do
       LOG_DIR="$OPTARG"
       ;;
     C) 
-      CONFIG_HOME="$OPTARG"
+      IMPORT_CONFIGD_H="$OPTARG"
       ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
@@ -69,15 +69,15 @@ fi
 BATCH=$1
 
 # BATCH is either a filename, or one of "WXS", "WGS", "RNA-Seq".  If the latter, require that assume filename is given by defaults,
-# and CONFIG_HOME must be defined
+# and IMPORT_CONFIGD_H must be defined
 if [ ! -e $BATCH ]; then
-# BATCH file does not exist.  Try to create it, if $CONFIG_HOME is defined.  For instance,
+# BATCH file does not exist.  Try to create it, if $IMPORT_CONFIGD_H is defined.  For instance,
 #   /gscmnt/gc2521/dinglab/mwyczalk/somatic-wrapper-data//GDC_import/import.config/CPTAC3.b1/WXS.batch.dat
-    if [ -z $CONFIG_HOME ]; then
-        >&2 echo Error: CONFIG_HOME \[-C\] not specified and batch file $BATCH does not exist.  Quitting
+    if [ -z $IMPORT_CONFIGD_H ]; then
+        >&2 echo Error: IMPORT_CONFIGD_H \[-C\] not specified and batch file $BATCH does not exist.  Quitting
         exit 1
     fi
-    BATCH_TEST="$CONFIG_HOME/${BATCH}.batch.dat"
+    BATCH_TEST="$IMPORT_CONFIGD_H/${BATCH}.batch.dat"
     if [ ! -e $BATCH_TEST ]; then
         >&2 echo Error: Batch file $BATCH does not exist
         >&2 echo Default batch file $BATCH_TEST does not exist either.  Quitting.

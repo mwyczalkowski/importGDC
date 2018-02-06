@@ -9,7 +9,7 @@
 #     with each called function called in dry run mode if it gets one -d, and popping off one and passing rest otherwise
 # -g LSF_GROUP: LSF group to use starting job
 # -S SR_H: path to SR data file.  Default: config/SR.dat
-# -O DATAD_H: path to base of download directory (will write to $DATAD_H/GDC_import/data). Default: ./data
+# -O IMPORT_DATAD_H: path to base of download directory (will write to $IMPORT_DATAD_H/GDC_import/data). Default: ./data
 # -s STEP: Step to process.  Default (and only available value) is 'import'
 # -t TOKEN_C: token filename, path relative to container.  Required
 # -l LOGD_H: Log output directory.  Required for MGI
@@ -78,13 +78,13 @@ else    # DRYRUN has multiple d's: strip one d off the argument and pass it to f
     XARGS="$XARGS -$DRYRUN"
 fi
 
-$BASH $IMPORTGDC_HOME/GDC_import.sh $XARGS -t $TOKEN_C -O $DATAD_H -p $DF -n $FN  $UUID
+$BASH $IMPORTGDC_HOME/GDC_import.sh $XARGS -t $TOKEN_C -O $IMPORT_DATAD_H -p $DF -n $FN  $UUID
 
 }
 
 # Default values
 SR_H="config/SR.dat"
-DATAD_H="./data"
+IMPORT_DATAD_H="./data"
 STEP="import"
 
 while getopts ":dg:S:O:s:t:IDMBfl:T:E:" opt; do
@@ -106,9 +106,9 @@ while getopts ":dg:S:O:s:t:IDMBfl:T:E:" opt; do
       TOKEN_C=$OPTARG
       >&2 echo "Token File: $TOKEN_C" 
       ;;
-    O) # set DATAD_H
-      DATAD_H="$OPTARG"
-      >&2 echo "Data Dir: $DATAD_H" 
+    O) # set IMPORT_DATAD_H
+      IMPORT_DATAD_H="$OPTARG"
+      >&2 echo "Data Dir: $IMPORT_DATAD_H" 
       ;;
     s) 
       STEP="$OPTARG"

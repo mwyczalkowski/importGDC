@@ -11,7 +11,7 @@
 #   FN - filename of object.  Required, used only for indexing
 #   DF - dataformat of object (BAM, FASTQ).  Required
 # Options:
-#   -O OUTD_C: base of imported data dir, visible from container.  Default is /data/GDC_import/data.  Optional
+#   -O IMPORTD_C: base of imported data dir, visible from container.  Default is /data/GDC_import/data.  Optional
 #   -D: Download only, do not index
 #   -I: Index only, do not Download.  DT must be "BAM"
 #   -d: dry run, simply print commands which would be executed for principal steps
@@ -21,15 +21,15 @@
 #       e.g., -T 75000 will run `trickle -s -d 75000 gdc-client ...`.  See https://github.com/mariusae/trickle
 
 
-OUTD_C="/data/GDC_import/data"
+IMPORTD_C="/data/GDC_import/data"
 GDCBIN_C="/usr/local/bin"
 
 # http://wiki.bash-hackers.org/howto/getopts_tutorial
 while getopts ":O:DIdP:fT:" opt; do
   case $opt in
     O)
-      OUTD_C="$OPTARG"
-      >&2 echo Output directory: $OUTD_C
+      IMPORTD_C="$OPTARG"
+      >&2 echo Output directory: $IMPORTD_C
       ;;
     P)
       GDCBIN_C="$OPTARG"
@@ -41,7 +41,7 @@ while getopts ":O:DIdP:fT:" opt; do
       ;;
     I)  # Index only
       IXO=1
-      >&2 echo Output dir: $OUTD_C
+      >&2 echo Output dir: $IMPORTD_C
       ;;
     f)  # dry run
       FORCE_OVERWRITE=1
@@ -73,7 +73,7 @@ then
     exit 1
 fi
 
-mkdir -p $OUTD_C
+mkdir -p $IMPORTD_C
 
 UUID=$1
 TOKEN=$2
@@ -81,7 +81,7 @@ FN=$3
 DT=$4
 
 # Where we expect output to go
-DAT=$OUTD_C/$UUID/$FN
+DAT=$IMPORTD_C/$UUID/$FN
 
 # RUN is a prefix which allows us to short-circuit execution for dry run
 RUN=""
@@ -113,8 +113,8 @@ if [ -z $IXO ]; then
     fi
 
     # Documentation of gdc-client: https://docs.gdc.cancer.gov/Data_Transfer_Tool/Users_Guide/Accessing_Built-in_Help/
-    # GDC Client saves data to file $OUTD_C/$UUID/$FN.  We take advantage of this information to index BAM file after download
-    $RUN $GDCBIN_C/gdc-client download -t $TOKEN -d $OUTD_C $UUID
+    # GDC Client saves data to file $IMPORTD_C/$UUID/$FN.  We take advantage of this information to index BAM file after download
+    $RUN $GDCBIN_C/gdc-client download -t $TOKEN -d $IMPORTD_C $UUID
 fi
 
 

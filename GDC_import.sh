@@ -2,7 +2,7 @@
 # Usage: GDC_import.sh [options] UUID [UUID2 ...]
 #
 # -M: run in MGI environment
-# -O DATAD_H: output directory on host.  Mandatory
+# -O IMPORT_DATAD_H: output directory on host.  Mandatory
 # -t TOKEN_C: token file path in container.  Mandatory
 # -l LOGD_H: log directory path in host.  Mandatory for MGI mode
 # -n FN: filename associated with UUID (filename only, no path).  Mandatory
@@ -18,26 +18,27 @@
 # -T TRICKLE_RATE: Run using trickle to shape data usage; rate is maximum cumulative download rate
 # -E RATE: throttle download rate using MGI using LSF queue (Matt Callaway test).  Rate in mbps, try 600
 
-# TODO: Allow argument for process_GDC_uuid -O OUTD_C to be passed.  Currently defalt is /data/GDC_import/data
+# TODO: Allow argument for process_GDC_uuid -O IMPORTD_C to be passed.  Currently defalt is /data/GDC_import/data
+# Note that this is different from the -O passed go this script
 
 
 # This is run from the host computer.  
-# Executes script image.init/process_GDC_uuid.sh from within docker container
+# Executes script process_GDC_uuid.sh from within docker container
 
 DOCKER_IMAGE="mwyczalkowski/importgdc"
-PROCESS="/usr/local/importGDC/image.init/process_GDC_uuid.sh"
+PROCESS="/usr/local/importGDC/process_GDC_uuid.sh"
 
 # start process_GDC_uuid.sh in vanilla docker environment
 function processUUID {
 UUID=$1
-DATAD_H=$2
+IMPORT_DATAD_H=$2
 TOKEN_C=$3
 FN=$4
 DF=$5
 
 # This starts mwyczalkowski/importgdc and maps directories:
 # Container: /data
-# Host: $DATAD_H
+# Host: $IMPORT_DATAD_H
 
 
 
@@ -58,11 +59,11 @@ fi
 CMD="/bin/bash $PROCESS $XARGS $UUID $TOKEN_C $FN $DF"
 
 if [ ! $RUNBASH ]; then
-$DOCKER run -v $DATAD_H:/data $DOCKER_IMAGE $CMD >&2
+$DOCKER run -v $IMPORT_DATAD_H:/data $DOCKER_IMAGE $CMD >&2
 
 else
 
-$DOCKER run -it -v $DATAD_H:/data $DOCKER_IMAGE /bin/bash >&2
+$DOCKER run -it -v $IMPORT_DATAD_H:/data $DOCKER_IMAGE /bin/bash >&2
 
 fi
 
@@ -71,7 +72,7 @@ fi
 # start docker in MGI environment
 function processUUID_MGI {
 UUID=$1
-DATAD_H=$2
+IMPORT_DATAD_H=$2
 TOKEN_C=$3
 FN=$4
 DF=$5
@@ -98,8 +99,8 @@ else    # DRYRUN has multiple d's: pop one d off the argument and pass it to fun
 fi
 
 # Where container's /data is mounted on host
-echo Mapping /data to $DATAD_H
-export LSF_DOCKER_VOLUMES="$DATAD_H:/data"
+echo Mapping /data to $IMPORT_DATAD_H
+export LSF_DOCKER_VOLUMES="$IMPORT_DATAD_H:/data"
 
 # for testing, so that it goes faster, do this on blade18-2-11.gsc.wustl.edu
 #DOCKERHOST="-m blade18-2-11.gsc.wustl.edu"
@@ -108,7 +109,7 @@ export LSF_DOCKER_VOLUMES="$DATAD_H:/data"
 
 if [ -z $RUNBASH ]; then
 
-    PROCESS="$IMPORTGDC_HOME/image.init/process_GDC_uuid.sh"
+    PROCESS="$IMPORTGDC_HOME/process_GDC_uuid.sh"
 
     CMD="/bin/bash $PROCESS $XARGS $UUID $TOKEN_C $FN $DF"
     $BSUB $LSFQ $DOCKERHOST $LSF_ARGS $LOGS -a "docker($DOCKER_IMAGE)" "$CMD"
@@ -132,8 +133,8 @@ while getopts ":Mt:O:p:n:dBIDg:fl:T:E:" opt; do
       >&2 echo Token file: $TOKEN_C
       ;;
     O)  
-      DATAD_H=$OPTARG
-      >&2 echo Host data dir: $DATAD_H
+      IMPORT_DATAD_H=$OPTARG
+      >&2 echo Host data dir: $IMPORT_DATAD_H
       ;;
     p)
       DF=$OPTARG
@@ -191,7 +192,7 @@ if [ -z $TOKEN_C ]; then
     >&2 echo Error: token not defined \[-t\]
     exit 1
 fi
-if [ -z $DATAD_H ]; then
+if [ -z $IMPORT_DATAD_H ]; then
     >&2 echo Error: output directory not defined \[-o\]
     exit 1
 fi
@@ -204,9 +205,9 @@ if [ $MGI ]; then
         >&2 echo Error: Log directory not defined \[-l\]
         exit 1
     fi
-    processUUID_MGI $UUID $DATAD_H $TOKEN_C $FN $DF $LOGD_H
+    processUUID_MGI $UUID $IMPORT_DATAD_H $TOKEN_C $FN $DF $LOGD_H
 else
-    processUUID $UUID $DATAD_H $TOKEN_C $FN $DF
+    processUUID $UUID $IMPORT_DATAD_H $TOKEN_C $FN $DF
 fi
 
 done
