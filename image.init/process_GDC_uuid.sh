@@ -11,29 +11,29 @@
 #   FN - filename of object.  Required, used only for indexing
 #   DF - dataformat of object (BAM, FASTQ).  Required
 # Options:
-#   -O OUTD: base of imported data dir, visible from container.  Default is /data/GDC_import/data.  Optional
+#   -O OUTD_C: base of imported data dir, visible from container.  Default is /data/GDC_import/data.  Optional
 #   -D: Download only, do not index
 #   -I: Index only, do not Download.  DT must be "BAM"
 #   -d: dry run, simply print commands which would be executed for principal steps
 #   -f: force overwrite of existing data files
-#   -P GDCBIN: Path to gdc-client.  Default: /usr/local/bin
+#   -P GDCBIN_C: Path to gdc-client.  Default: /usr/local/bin
 #   -T TRICKLE_RATE: Run using trickle to shape data usage; rate is maximum cumulative download rate
 #       e.g., -T 75000 will run `trickle -s -d 75000 gdc-client ...`.  See https://github.com/mariusae/trickle
 
 
-OUTD="/data/GDC_import/data"
-GDCBIN="/usr/local/bin"
+OUTD_C="/data/GDC_import/data"
+GDCBIN_C="/usr/local/bin"
 
 # http://wiki.bash-hackers.org/howto/getopts_tutorial
 while getopts ":O:DIdP:fT:" opt; do
   case $opt in
     O)
-      OUTD="$OPTARG"
-      >&2 echo Output directory: $OUTD
+      OUTD_C="$OPTARG"
+      >&2 echo Output directory: $OUTD_C
       ;;
     P)
-      GDCBIN="$OPTARG"
-      >&2 echo GDC Path: $GDCBIN
+      GDCBIN_C="$OPTARG"
+      >&2 echo GDC Path: $GDCBIN_C
       ;;
     D)  # Download only
       DLO=1
@@ -41,7 +41,7 @@ while getopts ":O:DIdP:fT:" opt; do
       ;;
     I)  # Index only
       IXO=1
-      >&2 echo Output dir: $OUTD
+      >&2 echo Output dir: $OUTD_C
       ;;
     f)  # dry run
       FORCE_OVERWRITE=1
@@ -73,7 +73,7 @@ then
     exit 1
 fi
 
-mkdir -p $OUTD
+mkdir -p $OUTD_C
 
 UUID=$1
 TOKEN=$2
@@ -81,7 +81,7 @@ FN=$3
 DT=$4
 
 # Where we expect output to go
-DAT=$OUTD/$UUID/$FN
+DAT=$OUTD_C/$UUID/$FN
 
 # RUN is a prefix which allows us to short-circuit execution for dry run
 RUN=""
@@ -113,8 +113,8 @@ if [ -z $IXO ]; then
     fi
 
     # Documentation of gdc-client: https://docs.gdc.cancer.gov/Data_Transfer_Tool/Users_Guide/Accessing_Built-in_Help/
-    # GDC Client saves data to file $OUTD/$UUID/$FN.  We take advantage of this information to index BAM file after download
-    $RUN $GDCBIN/gdc-client download -t $TOKEN -d $OUTD $UUID
+    # GDC Client saves data to file $OUTD_C/$UUID/$FN.  We take advantage of this information to index BAM file after download
+    $RUN $GDCBIN_C/gdc-client download -t $TOKEN -d $OUTD_C $UUID
 fi
 
 

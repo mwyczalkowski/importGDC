@@ -8,8 +8,8 @@
 # -d: dry run.  This may be repeated (e.g., -dd or -d -d) to pass the -d argument to called functions instead, 
 #     with each called function called in dry run mode if it gets one -d, and popping off one and passing rest otherwise
 # -g LSF_GROUP: LSF group to use starting job
-# -S SR_FILE: path to SR data file.  Default: config/SR.dat
-# -O DATA_DIR: path to base of download directory (will write to $DATA_DIR/GDC_import/data). Default: ./data
+# -S SR_H: path to SR data file.  Default: config/SR.dat
+# -O DATAD_H: path to base of download directory (will write to $DATAD_H/GDC_import/data). Default: ./data
 # -s STEP: Step to process.  Default (and only available value) is 'import'
 # -t TOKEN_C: token filename, path relative to container.  Required
 # -l LOGD_H: Log output directory.  Required for MGI
@@ -38,9 +38,9 @@ fi
 function launch_import {
 UUID=$1
 
-NMATCH=$(grep $UUID $SR | wc -l)
+NMATCH=$(grep $UUID $SR_H | wc -l)
 if [ $NMATCH -ne "1" ]; then
-    >&2 echo ERROR: UUID $UUID  matches $NMATCH lines in $SR \(expecting unique match\)
+    >&2 echo ERROR: UUID $UUID  matches $NMATCH lines in $SR_H \(expecting unique match\)
     exit 1;
 fi
 
@@ -56,12 +56,12 @@ fi
 #     9 data_format
 #    10 UUID
 #    11 MD5
-FN=$(grep $UUID $SR | cut -f 7)
-DF=$(grep $UUID $SR | cut -f 9)
+FN=$(grep $UUID $SR_H | cut -f 7)
+DF=$(grep $UUID $SR_H | cut -f 9)
 
 
 if [ -z "$FN" ]; then
-    >&2 echo Error: UUID $UUID not found in $SR
+    >&2 echo Error: UUID $UUID not found in $SR_H
     exit 1
 fi
 
@@ -78,13 +78,13 @@ else    # DRYRUN has multiple d's: strip one d off the argument and pass it to f
     XARGS="$XARGS -$DRYRUN"
 fi
 
-$BASH $IMPORTGDC_HOME/GDC_import.sh $XARGS -t $TOKEN_C -O $DATA_DIR -p $DF -n $FN  $UUID
+$BASH $IMPORTGDC_HOME/GDC_import.sh $XARGS -t $TOKEN_C -O $DATAD_H -p $DF -n $FN  $UUID
 
 }
 
 # Default values
-SR="config/SR.dat"
-DATA_DIR="./data"
+SR_H="config/SR.dat"
+DATAD_H="./data"
 STEP="import"
 
 while getopts ":dg:S:O:s:t:IDMBfl:T:E:" opt; do
@@ -99,16 +99,16 @@ while getopts ":dg:S:O:s:t:IDMBfl:T:E:" opt; do
       XARGS="$XARGS -g $OPTARG"
       ;;
     S) 
-      SR=$OPTARG
-      >&2 echo "SR File: $SR" 
+      SR_H=$OPTARG
+      >&2 echo "SR File: $SR_H" 
       ;;
     t) 
       TOKEN_C=$OPTARG
       >&2 echo "Token File: $TOKEN_C" 
       ;;
-    O) # set DATA_DIR
-      DATA_DIR="$OPTARG"
-      >&2 echo "Data Dir: $DATA_DIR" 
+    O) # set DATAD_H
+      DATAD_H="$OPTARG"
+      >&2 echo "Data Dir: $DATAD_H" 
       ;;
     s) 
       STEP="$OPTARG"
@@ -146,12 +146,12 @@ while getopts ":dg:S:O:s:t:IDMBfl:T:E:" opt; do
 done
 shift $((OPTIND-1))
 
-if [ -z $SR ]; then
+if [ -z $SR_H ]; then
     >&2 echo Error: SR file not defined \(-S\)
     exit 1
 fi
-if [ ! -e $SR ]; then
-    >&2 echo "Error: $SR does not exist"
+if [ ! -e $SR_H ]; then
+    >&2 echo "Error: $SR_H does not exist"
     exit 1
 fi
 if [ -z $TOKEN_C ]; then

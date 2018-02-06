@@ -2,10 +2,10 @@
 # Usage: GDC_import.sh [options] UUID [UUID2 ...]
 #
 # -M: run in MGI environment
-# -O: output directory on host.  Mandatory
-# -t: token file path in container.  Mandatory
+# -O DATAD_H: output directory on host.  Mandatory
+# -t TOKEN_C: token file path in container.  Mandatory
 # -l LOGD_H: log directory path in host.  Mandatory for MGI mode
-# -n: filename associated with UUID.  Mandatory
+# -n FN: filename associated with UUID (filename only, no path).  Mandatory
 # -p: dataformat (BAM or FASTQ).  Mandatory
 # -d: dry run - print out docker statement but do not execute (for debugging)
 #     This may be repeated (e.g., -dd or -d -d) to pass the -d argument to called functions instead, 
@@ -30,14 +30,14 @@ PROCESS="/usr/local/importGDC/image.init/process_GDC_uuid.sh"
 # start process_GDC_uuid.sh in vanilla docker environment
 function processUUID {
 UUID=$1
-OUTD=$2
-TOKEN=$3
+DATAD_H=$2
+TOKEN_C=$3
 FN=$4
 DF=$5
 
 # This starts mwyczalkowski/importgdc and maps directories:
 # Container: /data
-# Host: $OUTD
+# Host: $DATAD_H
 
 
 
@@ -55,14 +55,14 @@ else    # DRYRUN has multiple d's: pop one d off the argument and pass it to fun
 fi
 
 # This is the command that will execute on docker
-CMD="/bin/bash $PROCESS $XARGS $UUID $TOKEN $FN $DF"
+CMD="/bin/bash $PROCESS $XARGS $UUID $TOKEN_C $FN $DF"
 
 if [ ! $RUNBASH ]; then
-$DOCKER run -v $OUTD:/data $DOCKER_IMAGE $CMD >&2
+$DOCKER run -v $DATAD_H:/data $DOCKER_IMAGE $CMD >&2
 
 else
 
-$DOCKER run -it -v $OUTD:/data $DOCKER_IMAGE /bin/bash >&2
+$DOCKER run -it -v $DATAD_H:/data $DOCKER_IMAGE /bin/bash >&2
 
 fi
 
@@ -71,8 +71,8 @@ fi
 # start docker in MGI environment
 function processUUID_MGI {
 UUID=$1
-OUTD=$2
-TOKEN=$3
+DATAD_H=$2
+TOKEN_C=$3
 FN=$4
 DF=$5
 LOGD_H=$6
@@ -98,8 +98,8 @@ else    # DRYRUN has multiple d's: pop one d off the argument and pass it to fun
 fi
 
 # Where container's /data is mounted on host
-echo Mapping /data to $OUTD
-export LSF_DOCKER_VOLUMES="$OUTD:/data"
+echo Mapping /data to $DATAD_H
+export LSF_DOCKER_VOLUMES="$DATAD_H:/data"
 
 # for testing, so that it goes faster, do this on blade18-2-11.gsc.wustl.edu
 #DOCKERHOST="-m blade18-2-11.gsc.wustl.edu"
@@ -110,7 +110,7 @@ if [ -z $RUNBASH ]; then
 
     PROCESS="$IMPORTGDC_HOME/image.init/process_GDC_uuid.sh"
 
-    CMD="/bin/bash $PROCESS $XARGS $UUID $TOKEN $FN $DF"
+    CMD="/bin/bash $PROCESS $XARGS $UUID $TOKEN_C $FN $DF"
     $BSUB $LSFQ $DOCKERHOST $LSF_ARGS $LOGS -a "docker($DOCKER_IMAGE)" "$CMD"
 else
     $BSUB $LSFQ $DOCKERHOST $LSF_ARGS -Is -a "docker($DOCKER_IMAGE)" "/bin/bash"
@@ -128,12 +128,12 @@ while getopts ":Mt:O:p:n:dBIDg:fl:T:E:" opt; do
       >&2 echo MGI Mode
       ;;
     t)
-      TOKEN=$OPTARG
-      >&2 echo Token file: $TOKEN
+      TOKEN_C=$OPTARG
+      >&2 echo Token file: $TOKEN_C
       ;;
-    O)  # Note, this used to be O
-      OUTD=$OPTARG
-      >&2 echo Host data dir: $OUTD
+    O)  
+      DATAD_H=$OPTARG
+      >&2 echo Host data dir: $DATAD_H
       ;;
     p)
       DF=$OPTARG
@@ -187,11 +187,11 @@ while getopts ":Mt:O:p:n:dBIDg:fl:T:E:" opt; do
 done
 shift $((OPTIND-1))
 
-if [ -z $TOKEN ]; then
+if [ -z $TOKEN_C ]; then
     >&2 echo Error: token not defined \[-t\]
     exit 1
 fi
-if [ -z $OUTD ]; then
+if [ -z $DATAD_H ]; then
     >&2 echo Error: output directory not defined \[-o\]
     exit 1
 fi
@@ -204,9 +204,9 @@ if [ $MGI ]; then
         >&2 echo Error: Log directory not defined \[-l\]
         exit 1
     fi
-    processUUID_MGI $UUID $OUTD $TOKEN $FN $DF $LOGD_H
+    processUUID_MGI $UUID $DATAD_H $TOKEN_C $FN $DF $LOGD_H
 else
-    processUUID $UUID $OUTD $TOKEN $FN $DF
+    processUUID $UUID $DATAD_H $TOKEN_C $FN $DF
 fi
 
 done
