@@ -62,9 +62,9 @@ function summarize_import {
     UUID=$(echo "$SR" | cut -f 10)
 
     if [ "$STL" == "Blood Derived Normal" ]; then 
-        ST="normal"
+        ST="blood_normal"
     elif [ "$STL" == "Solid Tissue Normal" ]; then 
-        ST="normal"
+        ST="tissue_normal"
     elif [ "$STL" == "Primary Tumor" ]; then 
         ST="tumor"
     else
