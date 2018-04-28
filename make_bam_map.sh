@@ -76,6 +76,8 @@ function summarize_import {
     FNF=$(echo "$DATD/$UUID/$FN" | tr -s '/')  # append full path to data file, normalize path separators
     if [ ! -e $FNF ] && [ -z $NOWARN ]; then
         >&2 echo WARNING: Data file does not exist: $FNF
+        >&2 echo This file will not be added to BamMap
+        continue
     fi
 
     if [ $DF == "BAM" ]; then
@@ -83,6 +85,7 @@ function summarize_import {
         BAI="$FNF.bai"
         if [ ! -e $BAI ] && [ -z $NOWARN ]; then
             >&2 echo WARNING: Index file does not exist: $BAI
+            >&2 echo Continuing.
         fi
     fi
 
