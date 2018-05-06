@@ -127,6 +127,13 @@ if [ ! -f $DAT ]; then
 exit 1
 fi
 
+# TODO: also evalute MD5SUm of $DAT
+# to accelerate performance, use `tee` with process redirection - this prevents file from being read from disk more than once
+# see https://www.gnu.org/software/coreutils/manual/html_node/tee-invocation.html
+# Something like (this has not been tested),
+#   cat $DAT | tee >($RUN /usr/bin/samtools index -) 
+#		   >($RUN /usr/bin/samtools flagstat - > ${DAT}.flagstat) 
+#		   >(md5sum - > ${DAT}.md5sum)
 >&2 echo Indexing $DAT
 $RUN /usr/bin/samtools index $DAT
 >&2 echo Flagstat $DAT
