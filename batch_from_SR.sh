@@ -45,6 +45,7 @@ while read line; do
     # Finally, create expected filename as imported by gdc-client.  This consists of UUID/filename
     GDCFN="$UUID/$FN"
 
+    >&2 echo $CASE: $ES
     printf "$UUID\t$SN\t$GDCFN\n"
 
 
