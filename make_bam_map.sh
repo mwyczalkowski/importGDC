@@ -67,6 +67,12 @@ function summarize_import {
         ST="tissue_normal"
     elif [ "$STL" == "Primary Tumor" ]; then 
         ST="tumor"
+    elif [ "$STL" == "Buccal Cell Normal" ]; then 
+        ST="buccal_normal"
+    elif [ "$STL" == "Primary Blood Derived Cancer - Bone Marrow" ]; then 
+        ST="tumor_bone_marrow"
+    elif [ "$STL" == "Primary Blood Derived Cancer - Peripheral Blood" ]; then 
+        ST="tumor_peripheral_blood"
     else
         >&2 echo Error: Unknown sample type: $STL
         exit
