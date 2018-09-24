@@ -2,7 +2,7 @@
 
 # author: Matthew Wyczalkowski m.wyczalkowski@wustl.edu
 
-# Summarize details of given samples and check success of download
+# Evaluate downloaded BAM/FASTQ files and summarize details into BamMap file
 # Usage: make_bam_map.sh [options] [UUID [UUID2 ...] ]
 # If UUID is - then read UUID from STDIN
 # If UUID is not defined, -H will print header and exit, error otherwise
@@ -37,12 +37,14 @@
 # Procedure:
 # * extract information from SR file 
 # * Make sure output file exists
-# * If this is a BAM, make sure .bai file exists.  Print warning if it does not
+# * If this is a BAM, make sure .bai and .flagstat file exists.  Print warning if it does not
 #
 function summarize_import {
 # SR columns: case, disease, experimental_strategy, sample_type, samples, filename, filesize, data_format, UUID, md5sum
     UUID=$1
     REF=$2
+
+    ISOK=1
 
     SR=$(grep $UUID $SR_FILE)  # assuming only one value returned
     if [ -z "$SR" ]; then
@@ -50,7 +52,7 @@ function summarize_import {
         >&2 echo Quitting.
         exit
     fi
-    
+
     SN=$(echo "$SR" | cut -f 1)
     CASE=$(echo "$SR" | cut -f 2)
     DIS=$(echo "$SR" | cut -f 3)
@@ -83,20 +85,41 @@ function summarize_import {
     if [ ! -e $FNF ] && [ -z $NOWARN ]; then
         >&2 echo WARNING: Data file does not exist: $FNF
         >&2 echo This file will not be added to BamMap
+        ISOK=0
         continue
     fi
 
+    # Test actual filesize on disk vs. size expected from SR file
+    # stat has different usage on Mac and Linux.  Try both, ignore errors
+    # stat -f%z - works on Mac
+    # stat -c%s - works on linux
+    BMSIZE=$(stat -f%z $FNF 2>/dev/null || stat -c%s $FNF 2>/dev/null)
+    if [ "$BMSIZE" != "$DS" ]; then
+        >&2 echo WARNING: $FNF size \($BAMSIZE\) differs from expected \($DS\)
+        >&2 echo Continuing.
+        ISOK=0
+    fi
     if [ $DF == "BAM" ]; then
         # If BAM file, test to make sure that .bai file generated
         BAI="$FNF.bai"
         if [ ! -e $BAI ] && [ -z $NOWARN ]; then
             >&2 echo WARNING: Index file does not exist: $BAI
             >&2 echo Continuing.
+            ISOK=0
+        fi
+        BAI="$FNF.flagstat"
+        if [ ! -e $BAI ] && [ -z $NOWARN ]; then
+            >&2 echo WARNING: Flagstat file does not exist: $BAI
+            >&2 echo Continuing.
+            ISOK=0
         fi
     fi
 
-
     printf "$SN\t$CASE\t$DIS\t$ES\t$ST\t$FNF\t$DS\t$DF\t$REF\t$UUID\n"
+    
+    if [ $ISOK == 1 ]; then
+        >&2 echo OK: $FNF \($SN\)
+    fi
 }
 
 # Default values
@@ -123,11 +146,11 @@ while getopts ":S:O:r:Hw" opt; do
       NOWARN=1
       ;;
     \?)
-      echo "Invalid option: -$OPTARG" >&2
+      >&2 echo "Invalid option: -$OPTARG" >&2
       exit 1
       ;;
     :)
-      echo "Option -$OPTARG requires an argument." >&2
+      >&2 echo "Option -$OPTARG requires an argument." >&2
       exit 1
       ;;
   esac
@@ -135,8 +158,6 @@ done
 shift $((OPTIND-1))
 
 if [ $HEADER ]; then
-#    dt=$(date '+%d/%m/%Y %H:%M:%S');
-#    echo "# Summary Date $dt" 
     printf "# SampleName\tCase\tDisease\tExpStrategy\tSampType\tDataPath\tFileSize\tDataFormat\tReference\tUUID\n"
     if [ "$#" -eq 0 ]; then
         exit 0
