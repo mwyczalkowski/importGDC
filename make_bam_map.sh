@@ -2,10 +2,8 @@
 
 # author: Matthew Wyczalkowski m.wyczalkowski@wustl.edu
 
-# Evaluate downloaded BAM/FASTQ files and summarize details into BamMap file
-# Usage: make_bam_map.sh [options] [UUID [UUID2 ...] ]
-# If UUID is - then read UUID from STDIN
-# If UUID is not defined, -H will print header and exit, error otherwise
+# Evaluate successful download of BAM/FASTQ files in SR_FILE and output BamMap data
+# Usage: make_bam_map.sh [options] -S SR_FILE
 #
 # Output written to STDOUT.  Format is TSV with the following columns:
 #     1  SampleName
@@ -21,37 +19,34 @@
 # where SampleName is a generated unique name for this sample
 
 # options
-# -S SR_FILE: path to SR data file.  Default: config/SR.dat
+# -S SR_FILE: path to SR data file.  Required
 # -O DATA_DIR: path to base of download directory (downloads will be written to to $DATA_DIR/GDC_import/data). Default: ./data
-# -r REF: reference name - assume same for all SR.  Default: hg19
+# -r REF: reference name - assume same for all files in SR_FILE.  Required
 # -w: don't print warnings about missing data
 # -H: Print header
 
-# For a given UUID, confirm existence of output file and (if appropriate) index file.
+# For every UUID in SR_FILE, confirm existence of output file and (if appropriate) index file.
 # output a "bam map" file which can later be used as input for processing.  Note that
 # all information used to generate BamMap comes from SR file and local configuration (paths, etc),
-# We evaluate success of download by checking whether data file exists in the expected path;
-# no effort is made to critically compare downloaded file against that expected from SR file (though
-# that would be helpful)
+# We evaluate success of download by checking whether data file exists in the expected path and whether filesizes match.
 #
 # Procedure:
 # * extract information from SR file 
 # * Make sure output file exists
+# * Make sure output file has expected path
 # * If this is a BAM, make sure .bai and .flagstat file exists.  Print warning if it does not
 #
+# Return values:
+#   0: Success - all data downloaded correctly
+#   1: Errors encountered - fatal error which prevents processing
+#   2: Warnings encountered - some data not downloaded 
+
 function summarize_import {
 # SR columns: case, disease, experimental_strategy, sample_type, samples, filename, filesize, data_format, UUID, md5sum
-    UUID=$1
+    SR=$1
     REF=$2
 
     ISOK=1
-
-    SR=$(grep $UUID $SR_FILE)  # assuming only one value returned
-    if [ -z "$SR" ]; then
-        >&2 echo UUID $UUID not found in $SR_FILE
-        >&2 echo Quitting.
-        exit
-    fi
 
     SN=$(echo "$SR" | cut -f 1)
     CASE=$(echo "$SR" | cut -f 2)
@@ -77,7 +72,7 @@ function summarize_import {
         ST="tumor_peripheral_blood"
     else
         >&2 echo Error: Unknown sample type: $STL
-        exit
+        exit 1
     fi
 
     # Test existence of output file and index file
@@ -86,6 +81,7 @@ function summarize_import {
         >&2 echo WARNING: Data file does not exist: $FNF
         >&2 echo This file will not be added to BamMap
         ISOK=0
+        RETVAL=1
         continue
     fi
 
@@ -98,6 +94,7 @@ function summarize_import {
         >&2 echo WARNING: $FNF size \($BAMSIZE\) differs from expected \($DS\)
         >&2 echo Continuing.
         ISOK=0
+        RETVAL=1
     fi
     if [ $DF == "BAM" ]; then
         # If BAM file, test to make sure that .bai file generated
@@ -106,12 +103,14 @@ function summarize_import {
             >&2 echo WARNING: Index file does not exist: $BAI
             >&2 echo Continuing.
             ISOK=0
+            RETVAL=1
         fi
         BAI="$FNF.flagstat"
         if [ ! -e $BAI ] && [ -z $NOWARN ]; then
             >&2 echo WARNING: Flagstat file does not exist: $BAI
             >&2 echo Continuing.
             ISOK=0
+            RETVAL=1
         fi
     fi
 
@@ -123,9 +122,7 @@ function summarize_import {
 }
 
 # Default values
-SR_FILE="config/SR.dat"
 DATA_DIR="./data"
-REF="hg19"
 
 # http://wiki.bash-hackers.org/howto/getopts_tutorial
 while getopts ":S:O:r:Hw" opt; do
@@ -172,31 +169,40 @@ fi
 
 if [ -z $SR_FILE ]; then
     >&2 echo Error: SR file not defined \(-S\)
-    exit
+    exit 1
 fi
 if [ ! -e $SR_FILE ]; then
     >&2 echo "Error: $SR_FILE does not exist"
-    exit
+    exit 1
+fi
+
+if [ -z $REF ]; then
+    >&2 echo Error: Reference not defined \(-r\)
+    exit 1
 fi
 
 DATD="$DATA_DIR/GDC_import/data"
 if [ ! -e $DATD ]; then
     >&2 echo "Error: Data directory does not exist: $DATD"
-    exit
+    exit 1
 fi
 
+# Return value, 0 if no errors / warnings, 1 if error, 2 if any warning
+RETVAL=0
+# Now loop over all lines of SR file and process them
+while read L; do
+    # Skip comments and header
+    [[ $L = \#* ]] && continue
 
-# this allows us to get UUIDs in one of two ways:
-# 1: start_step.sh ... UUID1 UUID2 UUID3
-# 2: cat UUIDS.dat | start_step.sh ... -
-if [ $1 == "-" ]; then
-    UUIDS=$(cat - )
+    summarize_import "$L" $REF
+done <$SR_FILE
+
+if [ $RETVAL == 0 ]; then
+    >&2 echo "Download successful"
+elif [ $RETVAL == 1 ]; then
+    >&2 echo "Errors encountered"   # typically not seen since errors exit
 else
-    UUIDS="$@"
+    >&2 echo "Warnings encountered"
 fi
 
-# Loop over all remaining arguments
-for UUID in $UUIDS
-do
-    summarize_import $UUID $REF
-done
+exit $RETVAL
