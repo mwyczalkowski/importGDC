@@ -5,6 +5,13 @@
 # Evaluate successful download of BAM/FASTQ files in SR_FILE and output BamMap data
 # Usage: make_bam_map.sh [options] -S SR_FILE
 #
+# options
+# -S SR_FILE: path to SR data file.  Default: config/SR.dat
+# -O DATA_DIR: path to base of download directory (downloads will be written to to $DATA_DIR/GDC_import/data). Default: ./data
+# -r REF: reference name - assume same for all SR.  Default: hg19
+# -w: don't print warnings about missing data
+# -H: Print header
+#
 # Output written to STDOUT.  Format is TSV with the following columns:
 #     1  SampleName
 #     2  Case
@@ -17,13 +24,6 @@
 #     9  Reference
 #    10  UUID
 # where SampleName is a generated unique name for this sample
-
-# options
-# -S SR_FILE: path to SR data file.  Required
-# -O DATA_DIR: path to base of download directory (downloads will be written to to $DATA_DIR/GDC_import/data). Default: ./data
-# -r REF: reference name - assume same for all files in SR_FILE.  Required
-# -w: don't print warnings about missing data
-# -H: Print header
 
 # For every UUID in SR_FILE, confirm existence of output file and (if appropriate) index file.
 # output a "bam map" file which can later be used as input for processing.  Note that
