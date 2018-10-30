@@ -4,13 +4,16 @@
 
 # Evaluate successful download of BAM/FASTQ files in SR_FILE and output BamMap data
 # Usage: make_bam_map.sh [options] -S SR_FILE
+
+# TODO: allow looping over either SR file or list of UUIDs
 #
 # options
-# -S SR_FILE: path to SR data file.  Default: config/SR.dat
+# -S SR_FILE: path to SR data file.  Required
 # -O DATA_DIR: path to base of download directory (downloads will be written to to $DATA_DIR/GDC_import/data). Default: ./data
-# -r REF: reference name - assume same for all SR.  Default: hg19
+# -r REF: reference name - assume same for all files in SR_FILE.  Required
 # -w: don't print warnings about missing data
 # -H: Print header
+
 #
 # Output written to STDOUT.  Format is TSV with the following columns:
 #     1  SampleName
@@ -162,10 +165,10 @@ if [ $HEADER ]; then
     >&2 echo printed header, but not exiting
 fi
 
-if [ "$#" -lt 1 ]; then
-    >&2 echo Error: No UUIDs passed
-    exit 1
-fi
+#if [ "$#" -lt 1 ]; then
+#    >&2 echo Error: No UUIDs passed
+#    exit 1
+#fi
 
 if [ -z $SR_FILE ]; then
     >&2 echo Error: SR file not defined \(-S\)
