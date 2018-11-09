@@ -32,6 +32,7 @@
 # output a "bam map" file which can later be used as input for processing.  Note that
 # all information used to generate BamMap comes from SR file and local configuration (paths, etc),
 # We evaluate success of download by checking whether data file exists in the expected path and whether filesizes match.
+# Only samples which check out OK are written to BamMap.
 #
 # Procedure:
 # * extract information from SR file 
@@ -74,22 +75,24 @@ function summarize_import {
     REF=$(echo "$SR" | cut -f 12)
 
 # This is being moved to merge_submitted_reads.sh (https://github.com/ding-lab/CPTAC3.case.discover/blob/master/merge_submitted_reads.sh)
-#    if [ "$STL" == "Blood Derived Normal" ]; then 
-#        ST="blood_normal"
-#    elif [ "$STL" == "Solid Tissue Normal" ]; then 
-#        ST="tissue_normal"
-#    elif [ "$STL" == "Primary Tumor" ]; then 
-#        ST="tumor"
-#    elif [ "$STL" == "Buccal Cell Normal" ]; then 
-#        ST="buccal_normal"
-#    elif [ "$STL" == "Primary Blood Derived Cancer - Bone Marrow" ]; then 
-#        ST="tumor_bone_marrow"
-#    elif [ "$STL" == "Primary Blood Derived Cancer - Peripheral Blood" ]; then 
-#        ST="tumor_peripheral_blood"
-#    else
-#        >&2 echo Error: Unknown sample type: $STL
-#        exit 1
-#    fi
+    if [ "$STL" == "Blood Derived Normal" ]; then 
+        ST="blood_normal"
+    elif [ "$STL" == "Solid Tissue Normal" ]; then 
+        ST="tissue_normal"
+    elif [ "$STL" == "Primary Tumor" ]; then 
+        ST="tumor"
+    elif [ "$STL" == "Buccal Cell Normal" ]; then 
+        ST="buccal_normal"
+    elif [ "$STL" == "Primary Blood Derived Cancer - Bone Marrow" ]; then 
+        ST="tumor_bone_marrow"
+    elif [ "$STL" == "Primary Blood Derived Cancer - Peripheral Blood" ]; then 
+        ST="tumor_peripheral_blood"
+    elif [ "$STL" == "blood_normal" ] || [ "$STL" == "tissue_normal" ] || [ "$STL" == "tumor" ] || [ "$STL" == "buccal_normal" ] || [ "$STL" == "tumor_bone_marrow" ] || [ "$STL" == "tumor_peripheral_blood" ] ; then 
+        ST="$STL"
+    else
+        >&2 echo Error: Unknown sample type: $STL
+        exit 1
+    fi
 
     # Test existence of output file and index file
     FNF=$(echo "$DATD/$UUID/$FN" | tr -s '/')  # append full path to data file, normalize path separators
@@ -111,6 +114,7 @@ function summarize_import {
         >&2 echo Continuing.
         ISOK=0
         RETVAL=1
+        continue
     fi
     if [ $DF == "BAM" ]; then
         # If BAM file, test to make sure that .bai file generated
@@ -120,6 +124,7 @@ function summarize_import {
             >&2 echo Continuing.
             ISOK=0
             RETVAL=1
+            continue
         fi
         BAI="$FNF.flagstat"
         if [ ! -e $BAI ] && [ -z $NOWARN ]; then
@@ -127,6 +132,7 @@ function summarize_import {
             >&2 echo Continuing.
             ISOK=0
             RETVAL=1
+            continue
         fi
     fi
 
@@ -172,7 +178,7 @@ shift $((OPTIND-1))
 
 if [ $HEADER ]; then
   # printf "# SampleName\tCase\tDisease\tExpStrategy\tSampType\tDataPath\tFileSize\tDataFormat\tReference\tUUID\n"
-    printf "# sample_name\tcase\tdisease\texperimental_strategy\tsample_type\tdata_path\tfilesize\tdata_format\treference\tUUID\n" > $OUT
+    printf "# sample_name\tcase\tdisease\texperimental_strategy\tsample_type\tdata_path\tfilesize\tdata_format\treference\tUUID\n" 
     if [ "$#" -eq 0 ]; then
         exit 0
     fi
