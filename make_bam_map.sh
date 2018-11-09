@@ -16,12 +16,12 @@
 #     8  DataFormat
 #     9  Reference
 #    10  UUID
+
 # where SampleName is a generated unique name for this sample
 
 # options
 # -S SR_FILE: path to SR data file.  Required
 # -O DATA_DIR: path to base of download directory (downloads will be written to to $DATA_DIR/GDC_import/data). Default: ./data
-# -r REF: reference name - assume same for all files in SR_FILE.  Required
 # -w: don't print warnings about missing data
 # -H: Print header
 
@@ -42,9 +42,20 @@
 #   2: Warnings encountered - some data not downloaded 
 
 function summarize_import {
-# SR columns: case, disease, experimental_strategy, sample_type, samples, filename, filesize, data_format, UUID, md5sum
+# SR columns:
+#     1  # sample_name
+#     2  case
+#     3  disease
+#     4  experimental_strategy
+#     5  sample_type
+#     6  samples
+#     7  filename
+#     8  filesize
+#     9  data_format
+#    10  UUID
+#    11  MD5
+#    12  reference
     SR=$1
-    REF=$2
 
     ISOK=1
 
@@ -57,23 +68,25 @@ function summarize_import {
     DS=$(echo "$SR" | cut -f 8)
     DF=$(echo "$SR" | cut -f 9)  # data format
     UUID=$(echo "$SR" | cut -f 10)
+    REF=$(echo "$SR" | cut -f 12)
 
-    if [ "$STL" == "Blood Derived Normal" ]; then 
-        ST="blood_normal"
-    elif [ "$STL" == "Solid Tissue Normal" ]; then 
-        ST="tissue_normal"
-    elif [ "$STL" == "Primary Tumor" ]; then 
-        ST="tumor"
-    elif [ "$STL" == "Buccal Cell Normal" ]; then 
-        ST="buccal_normal"
-    elif [ "$STL" == "Primary Blood Derived Cancer - Bone Marrow" ]; then 
-        ST="tumor_bone_marrow"
-    elif [ "$STL" == "Primary Blood Derived Cancer - Peripheral Blood" ]; then 
-        ST="tumor_peripheral_blood"
-    else
-        >&2 echo Error: Unknown sample type: $STL
-        exit 1
-    fi
+# This is being moved to merge_submitted_reads.sh (https://github.com/ding-lab/CPTAC3.case.discover/blob/master/merge_submitted_reads.sh)
+#    if [ "$STL" == "Blood Derived Normal" ]; then 
+#        ST="blood_normal"
+#    elif [ "$STL" == "Solid Tissue Normal" ]; then 
+#        ST="tissue_normal"
+#    elif [ "$STL" == "Primary Tumor" ]; then 
+#        ST="tumor"
+#    elif [ "$STL" == "Buccal Cell Normal" ]; then 
+#        ST="buccal_normal"
+#    elif [ "$STL" == "Primary Blood Derived Cancer - Bone Marrow" ]; then 
+#        ST="tumor_bone_marrow"
+#    elif [ "$STL" == "Primary Blood Derived Cancer - Peripheral Blood" ]; then 
+#        ST="tumor_peripheral_blood"
+#    else
+#        >&2 echo Error: Unknown sample type: $STL
+#        exit 1
+#    fi
 
     # Test existence of output file and index file
     FNF=$(echo "$DATD/$UUID/$FN" | tr -s '/')  # append full path to data file, normalize path separators
@@ -155,7 +168,8 @@ done
 shift $((OPTIND-1))
 
 if [ $HEADER ]; then
-    printf "# SampleName\tCase\tDisease\tExpStrategy\tSampType\tDataPath\tFileSize\tDataFormat\tReference\tUUID\n"
+  # printf "# SampleName\tCase\tDisease\tExpStrategy\tSampType\tDataPath\tFileSize\tDataFormat\tReference\tUUID\n"
+    printf "# sample_name\tcase\tdisease\texperimental_strategy\tsample_type\tdata_path\tfilesize\tdata_format\treference\tUUID\n" > $OUT
     if [ "$#" -eq 0 ]; then
         exit 0
     fi
