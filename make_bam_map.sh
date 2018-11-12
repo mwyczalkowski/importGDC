@@ -147,16 +147,13 @@ function summarize_import {
 DATA_DIR="./data"
 
 # http://wiki.bash-hackers.org/howto/getopts_tutorial
-while getopts ":S:O:r:Hw" opt; do
+while getopts ":S:O:Hw" opt; do
   case $opt in
     S) 
       SR_FILE=$OPTARG
       ;;
     O) # set DATA_DIR
       DATA_DIR="$OPTARG"
-      ;;
-    r) 
-      REF="$OPTARG"
       ;;
     H) 
       HEADER=1
@@ -199,11 +196,6 @@ if [ ! -e $SR_FILE ]; then
     exit 1
 fi
 
-if [ -z $REF ]; then
-    >&2 echo Error: Reference not defined \(-r\)
-    exit 1
-fi
-
 DATD="$DATA_DIR/GDC_import/data"
 if [ ! -e $DATD ]; then
     >&2 echo "Error: Data directory does not exist: $DATD"
@@ -217,7 +209,7 @@ while read L; do
     # Skip comments and header
     [[ $L = \#* ]] && continue
 
-    summarize_import "$L" $REF
+    summarize_import "$L" 
 done <$SR_FILE
 
 if [ $RETVAL == 0 ]; then
