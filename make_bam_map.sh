@@ -12,21 +12,23 @@
 # -O DATA_DIR: path to base of download directory (downloads will be written to to $DATA_DIR/GDC_import/data). Default: ./data
 # -w: don't print warnings about missing data
 # -H: Print header
+# -s: System (e.g., MGI).  Arbitrary string identifying system the path refers to.  Required
 
 #
 # Output written to STDOUT.  Format is TSV with the following columns:
-#     1  SampleName
-#     2  Case
-#     3  Disease
-#     4  ExpStrategy
-#     5  SampType
-#     6  DataPath
-#     7  FileSize
-#     8  DataFormat
-#     9  Reference
+#     1  sample_name
+#     2  case
+#     3  disease
+#     4  experimental_strategy
+#     5  sample_type
+#     6  data_path
+#     7  filesize
+#     8  data_format
+#     9  reference
 #    10  UUID
+#    11  system
 
-# where SampleName is a generated unique name for this sample
+# where SampleName is a generated convenience name for this sample
 
 # For every UUID in SR_FILE, confirm existence of output file and (if appropriate) index file.
 # output a "bam map" file which can later be used as input for processing.  Note that
@@ -136,7 +138,7 @@ function summarize_import {
         fi
     fi
 
-    printf "$SN\t$CASE\t$DIS\t$ES\t$ST\t$FNF\t$DS\t$DF\t$REF\t$UUID\n"
+    printf "$SN\t$CASE\t$DIS\t$ES\t$ST\t$FNF\t$DS\t$DF\t$REF\t$UUID\t$SYSTEM\n"
     
     if [ $ISOK == 1 ]; then
         >&2 echo OK: $FNF \($SN\)
@@ -147,10 +149,13 @@ function summarize_import {
 DATA_DIR="./data"
 
 # http://wiki.bash-hackers.org/howto/getopts_tutorial
-while getopts ":S:O:Hw" opt; do
+while getopts ":S:O:Hws:" opt; do
   case $opt in
     S) 
       SR_FILE=$OPTARG
+      ;;
+    s) 
+      SYSTEM=$OPTARG
       ;;
     O) # set DATA_DIR
       DATA_DIR="$OPTARG"
@@ -174,8 +179,7 @@ done
 shift $((OPTIND-1))
 
 if [ $HEADER ]; then
-  # printf "# SampleName\tCase\tDisease\tExpStrategy\tSampType\tDataPath\tFileSize\tDataFormat\tReference\tUUID\n"
-    printf "# sample_name\tcase\tdisease\texperimental_strategy\tsample_type\tdata_path\tfilesize\tdata_format\treference\tUUID\n" 
+    printf "# sample_name\tcase\tdisease\texperimental_strategy\tsample_type\tdata_path\tfilesize\tdata_format\treference\tUUID\tsystem\n" 
     if [ "$#" -eq 0 ]; then
         exit 0
     fi
@@ -193,6 +197,10 @@ if [ -z $SR_FILE ]; then
 fi
 if [ ! -e $SR_FILE ]; then
     >&2 echo "Error: $SR_FILE does not exist"
+    exit 1
+fi
+if [ -z $SYSTEM ]; then
+    >&2 echo Error: system not defined \(-s\)
     exit 1
 fi
 
