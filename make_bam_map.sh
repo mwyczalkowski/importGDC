@@ -128,6 +128,13 @@ function summarize_import {
             RETVAL=1
             continue
         fi
+        if [ ! -s $BAI ] && [ -z $NOWARN ]; then
+            >&2 echo WARNING: Index file zero size: $BAI
+            >&2 echo Continuing.
+            ISOK=0
+            RETVAL=1
+            continue
+        fi
         BAI="$FNF.flagstat"
         if [ ! -e $BAI ] && [ -z $NOWARN ]; then
             >&2 echo WARNING: Flagstat file does not exist: $BAI
