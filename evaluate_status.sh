@@ -125,14 +125,15 @@ if [ $MGI ]; then
     fi
 fi
 
-# In case of BAM file, test if .bai file exists.  If it does, we are completed.  Otherwise, incomplete
+# In case of BAM file, test if .bai and .flagstat files exists.  If both do, we are completed.  Otherwise, incomplete
 # We are testing for filename extension since we don't have data format information
 FNB=$(basename "$FN")
 EXT="${FNB##*.}"
 
 if [ $EXT == 'bam' ]; then
     BAI="$DAT.bai"
-    if [ -e $BAI ]; then
+    FLAGSTAT="$DAT.flagstat"
+    if [[ -s $BAI && -s $FLAGSTAT ]]; then
         echo complete
     else
         echo incomplete
