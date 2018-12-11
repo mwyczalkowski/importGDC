@@ -82,6 +82,8 @@ DT=$4
 
 # Where we expect output to go
 DAT=$IMPORTD_C/$UUID/$FN
+# .partial file is generated during download
+DAT_PARTIAL=$IMPORTD_C/$UUID/${FN}.partial
 
 # RUN is a prefix which allows us to short-circuit execution for dry run
 RUN=""
@@ -99,6 +101,11 @@ fi
 # If output file exists and FORCE_OVERWRITE not set, and not in Index Only mode, exit
 if [ -f $DAT ] && [ -z $FORCE_OVERWRITE ] && [ -z $IXO ]; then
     >&2 echo Output file $DAT exists.  Stopping.  Use -f to force overwrite.
+    exit 1
+fi
+# Treat presence of .partial file same way as if .bam existed.  We don't want to overwrite it by accident
+if [ -f $DAT_PARTIAL ] && [ -z $FORCE_OVERWRITE ] && [ -z $IXO ]; then
+    >&2 echo Temporary output file $DAT_PARTIAL exists.  Stopping.  Use -f to force overwrite.
     exit 1
 fi
 
