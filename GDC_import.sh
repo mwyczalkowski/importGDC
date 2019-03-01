@@ -18,15 +18,29 @@
 # -T TRICKLE_RATE: Run using trickle to shape data usage; rate is maximum cumulative download rate
 # -E RATE: throttle download rate using MGI using LSF queue (Matt Callaway test).  Rate in mbps, try 600
 
-# TODO: Allow argument for process_GDC_uuid -O IMPORTD_C to be passed.  Currently defalt is /data/GDC_import/data
+# TODO: Add argument "process_GDC_uuid.sh -O IMPORTD_C". Currently default is /data/GDC_import/data
 # Note that this is different from the -O passed go this script
 
+# Also, passing TOKEN_C here is confusing - should not be seeing _C paths here.
 
-# This is run from the host computer.  
-# Executes script process_GDC_uuid.sh from within docker container
+# This is run from the host computer.  Essentially runs,
+#    `docker process_GDC_uuid.sh`
+# so that process_GDC_UUID.sh runs within docker container
 
 DOCKER_IMAGE="mwyczalkowski/importgdc"
 PROCESS="/usr/local/importGDC/process_GDC_uuid.sh"
+
+function test_exit_status {
+    # Evaluate return value for chain of pipes; see https://stackoverflow.com/questions/90418/exit-shell-script-based-on-process-exit-code
+    rcs=${PIPESTATUS[*]};
+    for rc in ${rcs}; do
+        if [[ $rc != 0 ]]; then
+            >&2 echo Fatal ERROR.  Exiting.
+            exit $rc;
+        fi;
+    done
+}
+
 
 # start process_GDC_uuid.sh in vanilla docker environment
 function processUUID {
@@ -66,6 +80,7 @@ else
 $DOCKER run -it -v $IMPORT_DATAD_H:/data $DOCKER_IMAGE /bin/bash >&2
 
 fi
+test_exit_status
 
 }
 
@@ -116,6 +131,7 @@ if [ -z $RUNBASH ]; then
 else
     $BSUB $LSFQ $DOCKERHOST $LSF_ARGS -Is -a "docker($DOCKER_IMAGE)" "/bin/bash"
 fi
+test_exit_status
 }
 
 XARGS=""
