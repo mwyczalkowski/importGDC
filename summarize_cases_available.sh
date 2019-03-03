@@ -1,11 +1,72 @@
-source discover.paths.sh
-DAT="dat/$PROJECT.SR.dat"
-rm -f $OUT
+#!/bin/bash
+
+# Matthew Wyczalkowski <m.wyczalkowski@wustl.edu>
+# https://dinglab.wustl.edu/
+
+read -r -d '' USAGE <<'EOF'
+Evaluate presence of data on system and on GDC
+
+Usage:
+  summarize_cases_available.sh [options]CASES.dat AR.dat BAMMAP.dat
+
+Options:
+    -h: Print this help message
+    -d: Dry Run
+
+EOF
+
+# This script is based on https://github.com/ding-lab/CPTAC3.case.discover/blob/master/summarize_cases.sh
+# Writes to STDOUT simple ASCII summary of data present at GDC and on this system
+#
+# We are interested in identifying counts of various "data species".  These consist of the following data types:
+# * WGS.hg19 
+# * WXS.hg19 
+# * RNA.fq 
+# * miRNA.fq 
+# * WGS.hg38 
+# * WXS.hg38 
+# * RNA.hg38 
+# For each, consider tumor (T), blood normal (N), and tissue adjacant normal (A)
+# Data available on system (in BamMap) indicated with upper case, those on GDC but not here are in lower case
+
+# 
+# Algorithm:
+#   Loop over all cases
+#       Consier each "data species": 
+
+# http://wiki.bash-hackers.org/howto/getopts_tutorial
+while getopts ":hdf:" opt; do
+  case $opt in
+    h)
+      echo "$USAGE"
+      exit 0
+      ;;
+    d)  # example of binary argument
+      >&2 echo "Dry run" 
+      CMD="echo"
+      ;;
+#    f) # example of value argument
+#      FILTER=$OPTARG
+#      >&2 echo "Setting memory $MEMGB Gb" 
+#      ;;
+    \?)
+      >&2 echo "Invalid option: -$OPTARG" 
+      echo "$USAGE"
+      exit 1
+      ;;
+    :)
+      >&2 echo "Option -$OPTARG requires an argument." 
+      echo "$USAGE"
+      exit 1
+      ;;
+  esac
+done
+shift $((OPTIND-1))
 
 if [ "$#" -ne 3 ]; then
-    echo Error: Wrong number of arguments
-    echo Usage: summarize_cases.sh CASE_FILE SR_FILE OUTFN
-    exit
+    >&2 echo Error: Wrong number of arguments
+    >&2 echo "$USAGE"
+    exit 1
 fi
 
 CASES=$1
@@ -17,15 +78,14 @@ OUT=$3
 # if N is 0 empty string is returned
 # https://stackoverflow.com/questions/5349718/how-can-i-repeat-a-character-in-bash
 function repN {
-X=$1
-N=$2
+    X=$1
+    N=$2
 
-if [ $N == 0 ]; then
-return
-fi
+    if [ $N == 0 ]; then
+        return
+    fi
 
-printf "$1"'%.s' $(eval "echo {1.."$(($2))"}");
-
+    printf "$1"'%.s' $(eval "echo {1.."$(($2))"}");
 }
 
 function summarize_case {
