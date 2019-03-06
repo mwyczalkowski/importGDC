@@ -7,18 +7,18 @@ read -r -d '' USAGE <<'EOF'
 Evaluate presence of data on system and on GDC
 
 Usage:
-  summarize_cases_available.sh [options]CASES.dat AR.dat BAMMAP.dat
+  summarize_cases_available.sh [options] CASES.dat AR.dat BAMMAP.dat
 
 Options:
     -h: Print this help message
-    -d: Dry Run
+    -1: Stop after one case
 
 EOF
 
 # This script is based on https://github.com/ding-lab/CPTAC3.case.discover/blob/master/summarize_cases.sh
 # Writes to STDOUT simple ASCII summary of data present at GDC and on this system
 #
-# We are interested in identifying counts of various "data species".  These consist of the following data types:
+# We are interested in obtaining counts of various "data species".  These consist of the following:
 # * WGS.hg19 
 # * WXS.hg19 
 # * RNA.fq 
@@ -33,17 +33,23 @@ EOF
 # Algorithm:
 #   Loop over all cases
 #       Consier each "data species": 
+#           Obtain UUIDs for each species
+#           loop over each UUID
+#               Count how many entries associated with UUID.
+#                   0: GDC-count++
+#                   1: local-count++
+#                   >1: Warning, duplicate data, local-count++
+#           Print local, GDC count of available UUIDs with uppercase, lowercase symbols (TTt indicates two locally available tumor datasets of a given species, one not downloaded from GDC)
 
 # http://wiki.bash-hackers.org/howto/getopts_tutorial
-while getopts ":hdf:" opt; do
+while getopts ":h1" opt; do
   case $opt in
     h)
       echo "$USAGE"
       exit 0
       ;;
-    d)  # example of binary argument
-      >&2 echo "Dry run" 
-      CMD="echo"
+    1)  # example of binary argument
+      STOP_AFTER_ONE=1
       ;;
 #    f) # example of value argument
 #      FILTER=$OPTARG
@@ -70,8 +76,8 @@ if [ "$#" -ne 3 ]; then
 fi
 
 CASES=$1
-DAT=$2
-OUT=$3
+AR=$2
+BAMMAP=$3
 
 # Usage: repN X N
 # will return a string consisting of character X repeated N times
@@ -88,117 +94,139 @@ function repN {
     printf "$1"'%.s' $(eval "echo {1.."$(($2))"}");
 }
 
-function summarize_case {
-CASE=$1
-DIS=$2
+function get_GDC_UUID {
+    CASE=$1
+    ES=$2
+    ST=$3
+    REF=$4
+    # Columns of AR.dat
+    #     1  sample_name
+    #     2  case
+    #     3  disease
+    #     4  experimental_strategy
+    #     5  sample_type
+    #     6  samples
+    #     7  filename
+    #     8  filesize
+    #     9  data_format
+    #    10  UUID
+    #    11  MD5
+    #    12  reference
 
-# Get counts for (tumor, normal, tissue) x (WGS.hg19, WXS.hg19, WGS.hg38, WXS.hg38, RNA-Seq, miRNA-Seq)
-# Columns of SR.dat
-#     1  sample_name
-#     2  case
-#     3  disease
-#     4  experimental_strategy
-#     5  sample_type
-#     6  samples
-#     7  filename
-#     8  filesize
-#     9  data_format
-#    10  UUID
-#    11  MD5
-#    12  reference
-
-# values of sample_type we are evaluating:
-# blood_normal = N
-# tissue_normal = A
-# tumor = T
-
-# Note that Submitted Aligned Reads were previously (y1) all hg19.  That will not necessarily always
-# be the case, but we don't know what they are. For now, for simplicity, we will list the reference of all submitted
-# aligned reads as "hg19"
-
-function count_entries {
-CASE=$1
-ES=$2
-ST=$3
-REF=$4
-
-awk -v c=$CASE -v es=$ES -v st=$ST -v ref=$REF 'BEGIN{FS="\t";OFS="\t"}{if ( ($2 == c) && ($4 == es) && ($5 == st) && ($12 == ref)) print}' $DAT | wc -l
+    awk -v c=$CASE -v es=$ES -v st=$ST -v ref=$REF 'BEGIN{FS="\t";OFS="\t"}{if ( ($2 == c) && ($4 == es) && ($5 == st) && ($12 == ref)) print $10}' $AR 
 }
 
-# Get number of matches for each data category
-WGS19_T=$(count_entries $CASE WGS tumor hg19)
-WGS19_N=$(count_entries $CASE WGS blood_normal hg19)
-WGS19_A=$(count_entries $CASE WGS tissue_normal hg19)
+#function count_entries_BAM {
+#    CASE=$1
+#    ES=$2
+#    ST=$3
+#    REF=$4
+#    # Columns of BamMap
+#    #     1  sample_name
+#    #     2  case
+#    #     3  disease
+#    #     4  experimental_strategy
+#    #     5  sample_type
+#    #     6  data_path
+#    #     7  filesize
+#    #     8  data_format
+#    #     9  reference
+#    #    10  UUID
+#    #    11  system
+#
+#    awk -v c=$CASE -v es=$ES -v st=$ST -v ref=$REF 'BEGIN{FS="\t";OFS="\t"}{if ( ($2 == c) && ($4 == es) && ($5 == st) && ($9 == ref)) print}' $BAMMAP | wc -l
+#}
 
-WXS19_T=$(count_entries $CASE WXS tumor hg19)
-WXS19_N=$(count_entries $CASE WXS blood_normal hg19)
-WXS19_A=$(count_entries $CASE WXS tissue_normal hg19)
+# Return for a given case a species availability string (e.g., 'TTt') which indicates availability of given data species locally and on GDC
+# Species is defined by (experimental strategy, sample type, reference)
+# Availability string like 'TTt' indicates that two Tumor samples are present locally (in BamMap), and an additional one is available on GDC 
+function get_species_availability {
+    CASE=$1
+    ES=$2
+    ST=$3
+    REF=$4
+    LOC=$5    # letter indicating available locally, e.g., "T"
+    GDC=$6    # letter indicating available GDC (not locally), e.g., "t"
 
-WGS38_T=$(count_entries $CASE WGS tumor hg38)
-WGS38_N=$(count_entries $CASE WGS blood_normal hg38)
-WGS38_A=$(count_entries $CASE WGS tissue_normal hg38)
+    UUIDS=$(get_GDC_UUID $CASE $ES $ST $REF)
+    GDC_COUNT=0
+    LOCAL_COUNT=0
 
-WXS38_T=$(count_entries $CASE WXS tumor hg38)
-WXS38_N=$(count_entries $CASE WXS blood_normal hg38)
-WXS38_A=$(count_entries $CASE WXS tissue_normal hg38)
+    # Evaluate existence of each UUID in BamMap.  Multiple UUIDs imply duplicate data and are reported
+    for UUID in $UUIDS; do
+        L=$(fgrep $UUID $BAMMAP | wc -l)
+        if [ "$L" == 0 ]; then
+            GDC_COUNT=$GDC_COUNT+1
+        elif [ "$L" == 1 ]; then
+            LOCAL_COUNT=$(($LOCAL_COUNT + 1))
+        else
+            LOCAL_COUNT=$(($LOCAL_COUNT + 1))
+            >&2 echo NOTE: multiple copies \( $L \) of UUID $UUID in $BAMMAP   Continuing
+        fi
+    done
 
-RNA_T=$(count_entries $CASE RNA-Seq tumor NA)
-RNA_N=$(count_entries $CASE RNA-Seq blood_normal NA)
-RNA_A=$(count_entries $CASE RNA-Seq tissue_normal NA)
+    # Get string representations, given character repeated as many times as datasets 
+    LOCAL_STR=$(repN $LOC $LOCAL_COUNT)
+    GDC_STR=$(repN $GDC $GDC_COUNT)
+    echo ${LOCAL_STR}${GDC_STR}
+}
 
-RNA38_T=$(count_entries $CASE RNA-Seq tumor hg38)
-RNA38_N=$(count_entries $CASE RNA-Seq blood_normal hg38)
-RNA38_A=$(count_entries $CASE RNA-Seq tissue_normal hg38)
+function summarize_case {
+    CASE=$1
+    DIS=$2
 
-MIRNA_T=$(count_entries $CASE miRNA-Seq tumor NA)
-MIRNA_N=$(count_entries $CASE miRNA-Seq blood_normal NA)
-MIRNA_A=$(count_entries $CASE miRNA-Seq tissue_normal NA)
+    # Get counts for (tumor, normal, tissue) x (WGS.hg19, WXS.hg19, WGS.hg38, WXS.hg38, RNA-Seq, miRNA-Seq)
+    #
+    # values of sample_type we are evaluating:
+    # blood_normal = N
+    # tissue_normal = A
+    # tumor = T
 
-MIRNA38_T=$(count_entries $CASE miRNA-Seq tumor hg38)
-MIRNA38_N=$(count_entries $CASE miRNA-Seq blood_normal hg38)
-MIRNA38_A=$(count_entries $CASE miRNA-Seq tissue_normal hg38)
+    # Note that Submitted Aligned Reads were previously (y1) all hg19.  That will not necessarily always
+    # be the case, but we don't know what they are. For now, for simplicity, we will list the reference of all submitted
+    # aligned reads as "hg19"
 
-# Get string representations, given character repeated as many times as datasets 
-WGS19_TS=$(repN T $WGS19_T)
-WGS19_NS=$(repN N $WGS19_N)
-WGS19_AS=$(repN A $WGS19_A)
+    # Get number of matches for each data category
+    WGS19_TS=$(get_species_availability $CASE WGS tumor hg19 T t)
+    WGS19_NS=$(get_species_availability $CASE WGS blood_normal hg19 N n)
+    WGS19_AS=$(get_species_availability $CASE WGS tissue_normal hg19 A a)
 
-WXS19_TS=$(repN T $WXS19_T)
-WXS19_NS=$(repN N $WXS19_N)
-WXS19_AS=$(repN A $WXS19_A)
+    WXS19_TS=$(get_species_availability $CASE WXS tumor hg19 T t)
+    WXS19_NS=$(get_species_availability $CASE WXS blood_normal hg19 N n)
+    WXS19_AS=$(get_species_availability $CASE WXS tissue_normal hg19 A a)
 
-WGS38_TS=$(repN T $WGS38_T)
-WGS38_NS=$(repN N $WGS38_N)
-WGS38_AS=$(repN A $WGS38_A)
+    WGS38_TS=$(get_species_availability $CASE WGS tumor hg38 T t)
+    WGS38_NS=$(get_species_availability $CASE WGS blood_normal hg38 N n)
+    WGS38_AS=$(get_species_availability $CASE WGS tissue_normal hg38 A a)
 
-WXS38_TS=$(repN T $WXS38_T)
-WXS38_NS=$(repN N $WXS38_N)
-WXS38_AS=$(repN A $WXS38_A)
+    WXS38_TS=$(get_species_availability $CASE WXS tumor hg38 T t)
+    WXS38_NS=$(get_species_availability $CASE WXS blood_normal hg38 N n)
+    WXS38_AS=$(get_species_availability $CASE WXS tissue_normal hg38 A a)
 
-RNA_TS=$(repN T $RNA_T)
-RNA_NS=$(repN N $RNA_N)
-RNA_AS=$(repN A $RNA_A)
+    RNA_TS=$(get_species_availability $CASE RNA-Seq tumor NA T t)
+    RNA_NS=$(get_species_availability $CASE RNA-Seq blood_normal NA N n)
+    RNA_AS=$(get_species_availability $CASE RNA-Seq tissue_normal NA A a)
 
-MIRNA_TS=$(repN T $MIRNA_T)
-MIRNA_NS=$(repN N $MIRNA_N)
-MIRNA_AS=$(repN A $MIRNA_A)
+    RNA38_TS=$(get_species_availability $CASE RNA-Seq tumor hg38 T t)
+    RNA38_NS=$(get_species_availability $CASE RNA-Seq blood_normal hg38 N n)
+    RNA38_AS=$(get_species_availability $CASE RNA-Seq tissue_normal hg38 A a)
 
-RNA38_TS=$(repN T $RNA38_T)
-RNA38_NS=$(repN N $RNA38_N)
-RNA38_AS=$(repN A $RNA38_A)
+    MIRNA_TS=$(get_species_availability $CASE miRNA-Seq tumor NA T t)
+    MIRNA_NS=$(get_species_availability $CASE miRNA-Seq blood_normal NA N n)
+    MIRNA_AS=$(get_species_availability $CASE miRNA-Seq tissue_normal NA A a)
 
-MIRNA38_TS=$(repN T $MIRNA38_T)
-MIRNA38_NS=$(repN N $MIRNA38_N)
-MIRNA38_AS=$(repN A $MIRNA38_A)
+    MIRNA38_TS=$(get_species_availability $CASE miRNA-Seq tumor hg38 T t)
+    MIRNA38_NS=$(get_species_availability $CASE miRNA-Seq blood_normal hg38 N n)
+    MIRNA38_AS=$(get_species_availability $CASE miRNA-Seq tissue_normal hg38 A a)
 
-printf "$CASE\t$DIS\t\
-WGS.hg19 $WGS19_TS $WGS19_NS $WGS19_AS\t\
-WXS.hg19 $WXS19_TS $WXS19_NS $WXS19_AS\t\
-RNA.fq $RNA_TS $RNA_NS $RNA_AS\t\
-miRNA.fq $MIRNA_TS $MIRNA_NS $MIRNA_AS\t\
-WGS.hg38 $WGS38_TS $WGS38_NS $WGS38_AS\t\
-WXS.hg38 $WXS38_TS $WXS38_NS $WXS38_AS\t\
-RNA.hg38 $RNA38_TS $RNA38_NS $RNA38_AS\n"
+    printf "$CASE\t$DIS\t\
+    WGS.hg19 $WGS19_TS $WGS19_NS $WGS19_AS\t\
+    WXS.hg19 $WXS19_TS $WXS19_NS $WXS19_AS\t\
+    RNA.fq $RNA_TS $RNA_NS $RNA_AS\t\
+    miRNA.fq $MIRNA_TS $MIRNA_NS $MIRNA_AS\t\
+    WGS.hg38 $WGS38_TS $WGS38_NS $WGS38_AS\t\
+    WXS.hg38 $WXS38_TS $WXS38_NS $WXS38_AS\t\
+    RNA.hg38 $RNA38_TS $RNA38_NS $RNA38_AS\n"
 }
 
 while read L; do
@@ -210,7 +238,12 @@ while read L; do
 
     >&2 echo Processing $CASE
 
-    summarize_case $CASE $DIS >> $OUT
+    summarize_case $CASE $DIS 
+
+    if [ "$STOP_AFTER_ONE" ]; then
+        >&2 echo Stopping after one
+        exit 0
+    fi
 
 done < $CASES
 
