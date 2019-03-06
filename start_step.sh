@@ -96,11 +96,12 @@ function launch_import {
 
     if [ $PARALLEL_CASES ]; then
         JOBLOG="$LOGD_H/StartStep.${UUID}.log"
-        mkdir -p $LOGD_H
+        RESD="$LOGD_H/$UUID"
+        mkdir -p $RESD
         test_exit_status
         
         CMD=$(echo "$CMD" | sed 's/"/\\"/g' )   # This will escape the quotes in $CMD 
-        CMD="parallel --semaphore -j$PARALLEL_CASES --id $MYID --joblog $JOBLOG --tmpdir $LOGD_H \"$CMD\" "
+        CMD="parallel --semaphore -j$PARALLEL_CASES --id $MYID --joblog $JOBLOG --tmpdir $LOGD_H --results $RESD \"$CMD\" "
     fi
 
     if [ "$DRYRUN" == "d" ]; then
