@@ -13,6 +13,7 @@
 # -w: don't print warnings about missing data
 # -H: Print header
 # -s: System (e.g., MGI).  Arbitrary string identifying system the path refers to.  Required
+# -f: If unknown sample type, print warning but proceed
 
 #
 # Output written to STDOUT.  Format is TSV with the following columns:
@@ -92,8 +93,13 @@ function summarize_import {
     elif [ "$STL" == "blood_normal" ] || [ "$STL" == "tissue_normal" ] || [ "$STL" == "tumor" ] || [ "$STL" == "buccal_normal" ] || [ "$STL" == "tumor_bone_marrow" ] || [ "$STL" == "tumor_peripheral_blood" ] ; then 
         ST="$STL"
     else
-        >&2 echo Error: Unknown sample type: $STL
-        exit 1
+        if [ "$WEIRD_ST_OK" ]; then
+            >&2 echo WARNING: Unknown sample type: $STL.  Continuing
+            ST="$STL"
+        else
+            >&2 echo Error: Unknown sample type: $STL
+            exit 1
+        fi
     fi
 
     # Test existence of output file and index file
@@ -156,7 +162,7 @@ function summarize_import {
 DATA_DIR="./data"
 
 # http://wiki.bash-hackers.org/howto/getopts_tutorial
-while getopts ":S:O:Hws:" opt; do
+while getopts ":S:O:Hws:f" opt; do
   case $opt in
     S) 
       SR_FILE=$OPTARG
@@ -172,6 +178,9 @@ while getopts ":S:O:Hws:" opt; do
       ;;
     w) 
       NOWARN=1
+      ;;
+    f) 
+      WEIRD_ST_OK=1
       ;;
     \?)
       >&2 echo "Invalid option: -$OPTARG" >&2
