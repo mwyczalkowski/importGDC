@@ -173,20 +173,23 @@ while read L; do
     # Skip comments and header
     [[ $L = \#* ]] && continue
 
-    # Columns of SR.dat - Jan2018 update with sample_name
-    #     1 sample_name
-    #     2 case
-    #     3 disease
-    #     4 experimental_strategy
-    #     5 sample_type
-    #     6 samples
-    #     7 filename
-    #     8 filesize
-    #     9 data_format
-    #    10 UUID
-    #    11 MD5
+# Catalog file format
+#     1  # sample_name
+#     2  case
+#     3  disease
+#     4  experimental_strategy
+#     5  short_sample_type
+#     6  aliquot
+#     7  filename
+#     8  filesize
+#     9  data_format
+#    10  result_type
+#    11  UUID
+#    12  MD5
+#    13  reference
+#    14  sample_type
 
-    UUID=$(echo "$L" | cut -f 10) # unique ID of file
+    UUID=$(echo "$L" | cut -f 11) # unique ID of file
     SN=$(echo "$L" | cut -f 1)   # sample name
     FN=$(echo "$L" | cut -f 7)   # filename
 

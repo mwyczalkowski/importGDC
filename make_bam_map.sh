@@ -62,6 +62,22 @@ function summarize_import {
 #    10  UUID
 #    11  MD5
 #    12  reference
+
+# Catalog file format
+#     1  # sample_name
+#     2  case
+#     3  disease
+#     4  experimental_strategy
+#     5  short_sample_type
+#     6  aliquot
+#     7  filename
+#     8  filesize
+#     9  data_format
+#    10  result_type  ** new **
+#    11  UUID
+#    12  MD5
+#    13  reference
+#    14  sample_type  ** new **
     SR=$1
 
     ISOK=1
@@ -74,9 +90,10 @@ function summarize_import {
     FN=$(echo "$SR" | cut -f 7)
     DS=$(echo "$SR" | cut -f 8)
     DF=$(echo "$SR" | cut -f 9)  # data format
-    UUID=$(echo "$SR" | cut -f 10)
-    REF=$(echo "$SR" | cut -f 12)
+    UUID=$(echo "$SR" | cut -f 11)
+    REF=$(echo "$SR" | cut -f 13)
 
+# TODO: Confirm that this is valid
 # This is being moved to merge_submitted_reads.sh (https://github.com/ding-lab/CPTAC3.case.discover/blob/master/merge_submitted_reads.sh)
     if [ "$STL" == "Blood Derived Normal" ]; then 
         ST="blood_normal"
